@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icons - Ant Design Vue</title>
+    <style>
+        .icon-box {
+            margin: 5px;
+            width: 150px;
+            height: 80px;
+            float: left;
+        }
+        .icon-box p {
+            margin: 0;
+        }
+        .icon-box p:nth-child(1) {
+            font-size: 40px;
+            line-height: 50px;
+            text-align: center;
+        }
+        .icon-box p:nth-child(2) {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-tabs v-model="currentPaneKey">
+        <a-tab-pane v-for="category,index in iconData" :tab="category.title + '(' + category.child.length + ')'" :key="index">
+            <div class="icon-box" v-for="icon in category.child" @click="copyIcon(icon)">
+                <p><a-icon :type="icon"></a-icon></p>
+                <p>{{icon}}</p>
+            </div>
+        </a-tab-pane>
+        <a-input-search slot="tabBarExtraContent" v-model="searchIconStr" @change="searchIcon" placeholder="搜索图标"></a-input-search>
+    </a-tabs>
+</div>
+</body>
+<script>
+    let _this = null;
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles();
+    new Vue({
+        el: '.ls-container',
+        created() {
+            _this = this;
+        },
+        methods: {
+            // 复制图标
+            copyIcon(str) {
+                navigator.clipboard.writeText(str).then(() => {
+                    _this.$message.info('复制成功');
+                });
+            },
+            // 搜索图标
+            searchIcon() {
+                this.iconData[5].child = [];
+                this.iconData[4].child.forEach(item => {
+                    if(this.searchIconStr && this.searchIconStr != '' && item.includes(this.searchIconStr)) {
+                        this.iconData[5].child.push(item);
+                    }
+                });
+
+                this.currentPaneKey = 5;
+            }
+        },
+        data: {
+            currentPaneKey: 0,
+            searchIconStr: '',
+            // 图标数据
+            iconData: [{
+                "title": "方向性图标",
+                "child": [
+                    "step-backward","step-forward","fast-backward","fast-forward","shrink","arrows-alt","down","up","left","right","caret-up","caret-down","caret-left","caret-right","up-circle","down-circle","left-circle","right-circle","up-circle-o","down-circle-o","right-circle-o","left-circle-o","double-right","double-left","forward","backward","rollback","enter","retweet","swap","swap-left","swap-right","arrow-up","arrow-down","arrow-left","arrow-right","play-circle","play-circle-o","up-square","down-square","left-square","right-square","up-square-o","down-square-o","left-square-o","right-square-o","login","logout","menu-fold","menu-unfold"
+                ]
+            },
+                {
+                    "title": "提示建议性图标",
+                    "child": [
+                        "question","question-circle-o","question-circle","plus","plus-circle-o","plus-circle","pause","pause-circle-o","pause-circle","minus","minus-circle-o","minus-circle","plus-square","plus-square-o","minus-square","minus-square-o","info","info-circle-o","info-circle","exclamation","exclamation-circle-o","exclamation-circle","close","close-circle","close-circle-o","close-square","close-square-o","check","check-circle","check-circle-o","check-square","check-square-o","clock-circle-o","clock-circle"
+                    ]
+                },
+                {
+                    "title": "网站通用图标",
+                    "child": [
+                        "lock","unlock","area-chart","pie-chart","bar-chart","dot-chart","bars","book","calendar","cloud","cloud-download","code","code-o","copy","credit-card","delete","desktop","download","edit","ellipsis","file","file-text","file-unknown","file-pdf","file-excel","file-jpg","file-ppt","file-add","folder","folder-open","folder-add","hdd","frown","frown-o","meh","meh-o","smile","smile-o","inbox","laptop","appstore-o","appstore","line-chart","link","mail","mobile","notification","paper-clip","picture","poweroff","reload","search","setting","share-alt","shopping-cart","tablet","tag","tag-o","tags","tags-o","to-top","upload","user","video-camera","home","loading","loading-3-quarters","cloud-upload-o","cloud-download-o","cloud-upload","cloud-o","star-o","star","heart-o","heart","environment","environment-o","eye","eye-o","camera","camera-o","save","team","solution","phone","filter","exception","export","customer-service","qrcode","scan","like","like-o","dislike","dislike-o","message","pay-circle","pay-circle-o","calculator","pushpin","pushpin-o","bulb","select","switcher","rocket","bell","disconnect","database","compass","barcode","hourglass","key","flag","layout","printer","sound","usb","skin","tool","sync","wifi","car","schedule","user-add","user-delete","usergroup-add","usergroup-delete","man","woman","shop","gift","idcard","medicine-box","red-envelope","coffee","copyright","trademark","safety","wallet","bank","trophy","contacts","global","shake","api","fork"
+                    ]
+                },
+                {
+                    "title": "品牌和标识",
+                    "child": [
+                        "android","android-o","apple","apple-o","windows","windows-o","ie","chrome","github","aliwangwang","aliwangwang-o","dingding","dingding-o"
+                    ]
+                },
+                {
+                    "title": "全部",
+                    "child": ["account-book","alert","aliwangwang","alipay-circle","android","api","appstore","audio","apple","backward","bank","bell","behance-square","book","box-plot","bug","calculator","bulb","build","calendar","camera","car","caret-down","caret-left","caret-right","carry-out","caret-up","check-circle","check-square","chrome","clock-circle","close-circle","cloud","close-square","code","compass","codepen-circle","contacts","control","container","copy","credit-card","crown","customer-service","dashboard","delete","diff","database","dislike","down-circle","down-square","dribbble-square","environment","edit","exclamation-circle","experiment","eye-invisible","eye","facebook","fast-backward","fast-forward","file-add","file-excel","file-exclamation","file-image","file-markdown","file-pdf","file-ppt","file-text","file-word","file-unknown","file-zip","file","filter","fire","flag","folder-add","folder","folder-open","forward","frown","fund","funnel-plot","gift","github","gitlab","hdd","heart","highlight","home","hourglass","html5","idcard","info-circle","instagram","insurance","interaction","interation","layout","left-circle","left-square","like","lock","linkedin","mail","medicine-box","meh","message","minus-circle","minus-square","mobile","money-collect","pause-circle","pay-circle","notification","phone","picture","pie-chart","play-circle","play-square","plus-circle","plus-square","printer","profile","project","pushpin","property-safety","question-circle","read","reconciliation","red-envelope","rest","right-circle","rocket","right-square","safety-certificate","save","schedule","security-scan","setting","shop","shopping","skin","slack-square","skype","sliders","smile","snippets","sound","star","step-backward","step-forward","stop","switcher","tablet","tag","tags","taobao-circle","tool","thunderbolt","trophy","unlock","up-circle","up-square","usb","wallet","video-camera","warning","weibo-circle","wechat","windows","yahoo","weibo-square","yuque","youtube","alibaba","align-center","align-left","align-right","alipay","aliyun","amazon","ant-cloud","apartment","ant-design","area-chart","arrow-left","arrow-down","arrow-up","arrows-alt","arrow-right","audit","bar-chart","barcode","bars","bg-colors","behance","block","bold","border-bottom","border-left","border-outer","border-inner","border-right","border-horizontal","border-top","border-verticle","border","branches","check","ci","close","cloud-download","cloud-server","cloud-sync","cloud-upload","cluster","codepen","code-sandbox","colum-height","column-width","column-height","coffee","copyright","dash","deployment-unit","desktop","dingding","disconnect","dollar","double-right","dot-chart","double-left","download","dribbble","dropbox","ellipsis","enter","euro","exception","exclamation","export","fall","file-done","file-sync","file-protect","file-search","file-jpg","font-colors","font-size","fork","form","fullscreen-exit","fullscreen","gateway","down","drag","global","google-plus","google","heat-map","gold","history","ie","inbox","import","info","italic","issues-close","key","laptop","left","link","line-chart","line-height","line","loading-3-quarters","loading","login","logout","man","medium","medium-workmark","menu-unfold","menu-fold","menu","minus","monitor","more","ordered-list","number","pause","percentage","paper-clip","pic-center","pic-left","plus","pic-right","pound","poweroff","pull-request","qq","question","radar-chart","qrcode","radius-bottomleft","radius-bottomright","radius-upleft","radius-upright","radius-setting","reddit","redo","reload","retweet","right","rise","rollback","safety","robot","search","scan","scissor","select","shake","share-alt","shopping-cart","shrink","slack","small-dash","solution","sketch","sort-descending","sort-ascending","stock","swap-left","swap-right","strikethrough","swap","sync","table","team","taobao","to-top","trademark","transaction","twitter","underline","undo","unordered-list","up","upload","user-add","usergroup-add","user","user-delete","usergroup-delete","vertical-align-bottom","vertical-align-middle","vertical-align-top","vertical-right","vertical-left","wifi","zhihu","weibo","woman","zoom-in","zoom-out","canlendar"]
+                },
+                {"title": "搜索结果","child": []}
+            ]
+        }
+    });
+</script>
+</html>

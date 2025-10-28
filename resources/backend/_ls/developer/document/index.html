@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="/lib/bootstrap/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/lib/materialdesignicons.min.css">
+    <link rel="stylesheet" href="/lib/bootstrap/css/bootstrap3.3.7.min.css">
+    <link rel="stylesheet" href="/lib/editormd/css/editormd.min.css">
+    <link rel="stylesheet" href="/lib/leaf-common/leaf-common.css">
+    <style>
+        /* 返回顶部 */
+        .leafsys-back-to-top {
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            font-size: 26px;
+            position: fixed;
+            border-radius: 10px;
+            bottom: 20px;
+            right: 12px;
+            color: #737373;
+            background-color: #eaeaea;
+            display: none;
+            z-index: 1028;
+        }
+        .leafsys-back-to-top:hover {
+            color:#737373;
+            background-color: #a6a6a6;
+            transition:all .5s;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body"></div>
+    </div>
+    <!-- 回到顶部 -->
+    <a href="javaScript:" class="leafsys-back-to-top"><i class='bi bi-arrow-up-short'></i></a>
+</div>
+</body>
+<script src="/lib/jquery-3.1.0.min.js"></script>
+<!-- 解析md -->
+<script src="/lib/editormd/editormd.min.js"></script>
+<script src="/lib/editormd/lib/marked.min.js"></script>
+<script src="/lib/editormd/lib/prettify.min.js"></script>
+<script src="/lib/leaf-common/leaf-common.min.js"></script>
+<script>
+    let urlParams = new URLSearchParams(window.location.search);
+    let name = urlParams.get('name');
+    let type = urlParams.get('type');
+
+    // 当网页向下滑动 20px 出现"返回顶部" 按钮
+    const leafsysBackToTop = document.querySelector(".leafsys-back-to-top");
+
+    window.onscroll = function() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            leafsysBackToTop.style.display = "block";
+        } else {
+            leafsysBackToTop.style.display = "none";
+        }
+    };
+
+    leafsysBackToTop.addEventListener('click', () => {
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+    })
+
+    Ajax.get({
+        url: './file/' + name + '.' + type,
+        success(data, xhr) {
+            switch (type) {
+                case 'md':
+                    Dom.css('.card-body').innerHTML = '<div id="leafsys-document-article-toc"></div><div id="leafsys-document-content"></div>';
+
+                    // 此处使用editor.md来进行渲染
+                    editormd.markdownToHTML('leafsys-document-content', {
+                        markdown: data,
+                        tocContainer: '#leafsys-document-article-toc',//指定目录容器的id
+                        tocDropdown: true,//指定目录容器是否为下拉式
+                        htmlDecode: "style,script,iframe|on*"// 开启 HTML 标签解析，为了安全性，默认不开启
+                    });
+            }
+        }
+    });
+</script>
+</html>

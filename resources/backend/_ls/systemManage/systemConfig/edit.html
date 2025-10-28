@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑页面</title>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <div style="height: 50px;position: sticky;top: 24px;z-index: 1;">
+        <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon>返回</a-button>
+        <a-button v-if="operate !== 'View'" type="primary" size="small" @click="savaForm" style="margin-left: 10px;"><a-icon type="save"></a-icon>保存</a-button>
+    </div>
+    <a-form-model :model="formData" :rules="formDataRules" ref="form">
+        <a-form-model-item v-if="operate !== 'Add'" label="ID" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="id" disabled/>
+        </a-form-model-item>
+        <a-form-model-item label="配置键" prop="config_key" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.config_key" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="配置值" prop="config_value" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-textarea v-if="formData.config_type === '1'" v-model="formData.config_value" :disabled="formDisabled"></a-textarea>
+            <a-upload
+                v-if="formData.config_type === '2'"
+                :disabled="formDisabled"
+                list-type="picture-card"
+                :show-upload-list="false"
+                :before-upload="handleBeforeUpload"
+                @change="handleUploadChange"
+                :custom-request="handleUploadCustomRequest"
+                class="upload-avatar-wrapper"
+            >
+                <div v-if="formData.config_value" >
+                    <img :src="formData.config_value" alt="" style="max-width: 100px;max-height: 100px;"/>
+                    <!-- 自定义操作按钮 -->
+                    <div>
+                        <a-tooltip title="预览">
+                            <a-button type="link" size="small" @click.stop="uploadPreview">
+                                <a-icon type="eye"></a-icon>
+                            </a-button>
+                        </a-tooltip>
+                        <a-tooltip title="删除">
+                            <a-button type="link" size="small" @click.stop="uploadRemove">
+                                <a-icon type="delete" style="color: #f5222d;"></a-icon>
+                            </a-button>
+                        </a-tooltip>
+                    </div>
+                </div>
+                <div v-else>
+                    <a-icon :type="upload.loading ? 'loading' : 'plus'"></a-icon>
+                    <div class="ant-upload-text">Upload</div>
+                </div>
+            </a-upload>
+            <template v-if="formData.config_type === '3'">
+                <a-upload
+                    :multiple="false"
+                    @change="handleUploadChange"
+                    :file-list="[]"
+                    :custom-request="handleUploadCustomRequest"
+                >
+                    <a-button><a-icon type="upload"></a-icon> 上传文件</a-button>
+                </a-upload>
+                <!-- 文件显示区域 -->
+                <div v-if="formData.config_value">
+                    <a-icon type="paper-clip"></a-icon>
+                    <a :href="formData.config_value" download>{{$ls.file.getNameByUrl(formData.config_value)}}</a>
+                    <a-icon type="close" @click="uploadRemove"></a-icon>
+                </div>
+            </template>
+            <a-switch
+                v-if="formData.config_type === '4'"
+                :checked="formData.config_value == '1'"
+                :disabled="formDisabled"
+                @change="formData.config_value = formData.config_value === '1'?'0':'1'"
+            ></a-switch>
+            <a-date-picker
+                v-if="formData.config_type === '5'"
+                v-model="formData.config_value"
+                :disabled="formDisabled"
+                format="yyyy年MM月DD日" style="width: 200px;"
+                value-format="yyyy-MM-DD"
+            ></a-date-picker>
+            <a-date-picker
+                v-if="formData.config_type === '6'"
+                v-model="formData.config_value"
+                :disabled="formDisabled"
+                format="yyyy年MM月DD日 HH:mm:ss"
+                value-format="yyyy-MM-DD HH:mm:ss"
+                show-time
+                style="width: 200px;"
+            ></a-date-picker>
+        </a-form-model-item>
+        <a-form-model-item label="配置描述" prop="config_desc" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-textarea v-model="formData.config_desc" :disabled="formDisabled"></a-textarea>
+        </a-form-model-item>
+        <a-form-model-item label="配置类型" prop="config_type" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-select v-model="formData.config_type" :disabled="formDisabled" style="width: 100px;">
+                <a-select-option value="1">文本</a-select-option>
+                <a-select-option value="2">图片</a-select-option>
+                <a-select-option value="3">文件</a-select-option>
+                <a-select-option value="4">开关</a-select-option>
+                <a-select-option value="5">日期</a-select-option>
+                <a-select-option value="6">日期时间</a-select-option>
+            </a-select>
+        </a-form-model-item>
+        <a-form-model-item label="访问等级" prop="access_level" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-select v-model="formData.access_level" :disabled="formDisabled" style="width: 100px;">
+                <a-select-option value="1">不可访问</a-select-option>
+                <a-select-option value="2">后台用户</a-select-option>
+                <a-select-option value="3">前台用户</a-select-option>
+                <a-select-option value="4">公开</a-select-option>
+            </a-select>
+        </a-form-model-item>
+        <a-form-model-item label="备注" prop="memo" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-textarea v-model="formData.memo" :disabled="formDisabled" :rows="7" :maxlength="500" placeholder="最多输入 500 个字符"/>
+        </a-form-model-item>
+    </a-form-model>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null,viewer = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+                operate: params.operate,
+                id: params.id,
+                // 禁用表单
+                formDisabled: false,
+                // 表单数据
+                formData: {
+                    config_key: null,
+                    config_value: null,
+                    config_desc: null,
+                    config_type: '1',
+                    access_level: '1'
+                },
+                // 表单验证
+                formDataRules: {
+                    config_key: [
+                        {required: true, message: '配置键为必填项', trigger: 'change'},
+                    ],
+                    config_type: [
+                        {required: true, message: '配置类型为必填项', trigger: 'change'},
+                    ],
+
+                },
+                upload: {
+                    loading: false
+                }
+            },
+            created() {
+                _this = this;
+
+                if (this.operate === 'View') {
+                    this.formDisabled = true;
+                }
+
+                if (this.operate !== 'Add') {
+                    Ajax.get({
+                        url: '/system/api/systemConfig/getSystemConfigList',
+                        param: {
+                            config_id: _this.id
+                        },
+                        success(result) {
+                            if (result.IsSuccess === '1' && result.data.length > 0) {
+                                _this.formData = result.data[0];
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                }
+            },
+            methods: {
+                // 返回
+                onBack() {
+                    QiankunUtil.toPage(props.parentUrl + 'index.html', {backParams: params.backParams});
+                },
+                // 保存表单
+                savaForm() {
+                    this.$refs.form.validate(valid => {
+                        if (valid) {
+                            let param = this.formData;
+
+                            if (this.operate === 'Edit') {
+                                param.config_id = this.id;
+                            }
+
+                            Ajax.post({
+                                url: '/system/api/systemConfig/updateSystemConfig?UpdateType=' + this.operate,
+                                param: param,
+                                success(result) {
+                                    if (result.IsSuccess === '1') {
+                                        _this.$message.success('操作成功');
+                                        _this.onBack();
+                                    } else {
+                                        _this.$message.error(result.Msg);
+                                    }
+                                }
+                            });
+                        } else {
+                            this.$message.error('表单校验失败，请检查输入');
+                        }
+                    });
+                },
+                // 上传文件
+                handleBeforeUpload(file) {
+                    let isImg = false;
+
+                    switch (file.type) {
+                        case 'image/jpg':
+                        case 'image/jpeg':
+                        case 'image/png':
+                        case 'image/gif':
+                        case 'image/bmp':
+                            isImg = true;
+                    }
+                    if (!isImg) {
+                        this.$message.error('只允许上传jpg、png、gif、bmp类型的图片');
+                    }
+                    const isLt2M = file.size / 1024 / 1024 < 2;
+
+                    if (!isLt2M) {
+                        this.$message.error('图片必须小于2MB');
+                    }
+                    return isImg && isLt2M;
+                },
+                handleUploadChange(info) {
+                    // console.log(info);
+                    if (info.file.status === 'uploading') {
+                        this.upload.loading = true;
+                    }
+                },
+                uploadPreview() {
+                    if (!viewer) {
+                        // 创建新的 Viewer 实例绑定当前页图片
+                        viewer = new Viewer(document.querySelector('.upload-avatar-wrapper'), {
+                            url: 'src',
+                            filter(image) {
+                                return image.tagName.toLowerCase() === 'img'; // 只预览 img 标签
+                            }
+                        });
+                    }
+
+                    viewer.show();
+                },
+                uploadRemove() {
+                    this.formData.config_value = '';
+                },
+                // 上传文件自定义请求
+                handleUploadCustomRequest(options) {
+                    const { file, onProgress, onSuccess, onError } = options
+
+                    Ajax.post({
+                        url: '/system/api/upload',
+                        param: {
+                            File: file
+                        },
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.upload.loading = false;
+                                _this.formData.config_value = result.data;
+                                onSuccess();
+                            } else {
+                                _this.$message.error(result.Msg);
+                                onError();
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

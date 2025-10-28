@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑页面</title>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <div style="height: 50px;position: sticky;top: 24px;z-index: 1;">
+        <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon> 返回</a-button>
+        <a-button v-if="operate !== 'View'" type="primary" size="small" @click="savaForm" style="margin-left: 10px;"><a-icon type="save"></a-icon> 保存</a-button>
+    </div>
+    <a-form-model :model="formData" :rules="formDataRules" ref="form">
+        <a-form-model-item v-if="operate !== 'Add'" label="ID" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="id" disabled/>
+        </a-form-model-item>
+        <a-form-model-item label="名称" prop="name" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.name" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="账号" prop="account" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.account" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item v-if="operate == 'Add'" label="密码" prop="password" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input-password v-model="formData.password" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="角色" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-select
+                mode="multiple"
+                :value="roleSelect.selectedIds"
+                :disabled="formDisabled"
+                placeholder="请选择角色"
+                @change="roleSelectChange"
+                @search="roleSelectSearch"
+                @focus="roleSelectFocus"
+                :filter-option="false"
+            >
+                <a-select-option
+                    v-for="item in roleSelect.list"
+                    :key="item.role_id"
+                    :value="item.role_id"
+                >
+                    {{ item.role_id }} - {{ item.role_name }}
+                </a-select-option>
+            </a-select>
+        </a-form-model-item>
+        <a-form-model-item label="个性签名" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-textarea v-model="formData.personal_signature" :disabled="formDisabled" :rows="4" :maxlength="200" placeholder="最多输入 200 个字符"/>
+        </a-form-model-item>
+        <a-form-model-item label="头像" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-upload
+                :disabled="formDisabled"
+                list-type="picture-card"
+                :show-upload-list="false"
+                :before-upload="avatarUploadBeforeUpload"
+                @change="avatarUploadChange"
+                :custom-request="avatarUploadCustomRequest"
+                class="upload-avatar-wrapper"
+            >
+                <div v-if="formData.avatar" >
+                    <img class="upload-avatar" :src="formData.avatar" alt="avatar" style="max-width: 100px;max-height: 100px;"/>
+                    <!-- 自定义操作按钮 -->
+                    <div>
+                        <a-tooltip title="预览">
+                            <a-button type="link" size="small" @click.stop="avatarUploadPreview">
+                                <a-icon type="eye"></a-icon>
+                            </a-button>
+                        </a-tooltip>
+                        <a-tooltip title="删除">
+                            <a-button type="link" size="small" @click.stop="avatarUploadRemove">
+                                <a-icon type="delete" style="color: #f5222d;"></a-icon>
+                            </a-button>
+                        </a-tooltip>
+                    </div>
+                </div>
+                <div v-else>
+                    <a-icon :type="avatarUpload.loading ? 'loading' : 'plus'"></a-icon>
+                    <div class="ant-upload-text">Upload</div>
+                </div>
+            </a-upload>
+        </a-form-model-item>
+        <a-form-model-item label="生日" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-date-picker
+                v-model="formData.birthday"
+                :disabled="formDisabled"
+                format="yyyy年MM月DD日"
+                value-format="yyyy-MM-DD"
+                style="width: 200px;"
+            />
+        </a-form-model-item>
+        <a-form-model-item label="手机号" prop="phone" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.phone" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="电子邮箱" prop="email" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.email" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="真实姓名" prop="real_name" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.real_name" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="身份证号" prop="idcard" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.idcard" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="性别" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-radio-group v-model="formData.sex" :disabled="formDisabled">
+                <a-radio-button value="1">男</a-radio-button>
+                <a-radio-button value="2">女</a-radio-button>
+                <a-radio-button value="3">未知</a-radio-button>
+            </a-radio-group>
+        </a-form-model-item>
+        <a-form-model-item label="是否禁用" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-switch :checked="formData.is_disable == '1'" :disabled="formDisabled" @change="formData.is_disable = formData.is_disable?null:'1'" size="small"/>
+        </a-form-model-item>
+        <a-form-model-item label="登录IP" prop="login_ip" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-input v-model="formData.login_ip" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="登录时间" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+            <a-date-picker
+                v-model="formData.login_time"
+                :disabled="formDisabled"
+                format="yyyy年MM月DD日 HH:mm:ss"
+                value-format="yyyy-MM-DD HH:mm:ss"
+                show-time
+                style="width: 200px;"
+            />
+        </a-form-model-item>
+    </a-form-model>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null,viewer = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+                operate: params.operate,
+                id: params.id,
+                // 禁用表单
+                formDisabled: false,
+                // 表单数据
+                formData: {
+                    name: null,
+                    account: null,
+                    role_list: [],
+                    password: null,
+                    personal_signature: null,
+                    avatar: '',
+                    birthday: null,
+                    phone: null,
+                    email: null,
+                    real_name: null,
+                    idcard: null,
+                    sex: null,
+                    is_disable: null,
+                    login_ip: null,
+                    login_time: null
+                },
+                // 表单验证
+                formDataRules: {
+                    name: [
+                        { required: true, message: '名称为必填项', trigger: 'change' },
+                        { max: 50, message: '长度不能超过 50 个字符', trigger: 'change' }
+                    ],
+                    account: [
+                        { required: true, message: '账号为必填项', trigger: 'change' },
+                        { max: 50, message: '长度不能超过 50 个字符', trigger: 'change' }
+                    ],
+                    phone: [
+                        { max: 50, message: '长度不能超过 50 个字符', trigger: 'change' }
+                    ],
+                    email: [
+                        { max: 150, message: '长度不能超过 150 个字符', trigger: 'change' }
+                    ],
+                    real_name: [
+                        { max: 50, message: '长度不能超过 50 个字符', trigger: 'change' }
+                    ],
+                    idcard: [
+                        { max: 25, message: '长度不能超过 25 个字符', trigger: 'change' }
+                    ],
+                    login_ip: [
+                        { max: 50, message: '长度不能超过 50 个字符', trigger: 'change' }
+                    ]
+                },
+                roleSelect: {
+                    list: [],
+                    selectedIds: [],
+                },
+                avatarUpload: {
+                    loading: false
+                }
+            },
+            created() {
+                _this = this;
+
+                if (this.operate === 'View') {
+                    this.formDisabled = true;
+                }
+
+                if (this.operate !== 'Add') {
+                    Ajax.get({
+                        url: '/system/api/user/getUserList',
+                        param: {
+                            user_id: _this.id
+                        },
+                        success(result) {
+                            if(result.IsSuccess === '1' && result.data.length > 0) {
+                                _this.formData = result.data[0];
+                                _this.formData.sex = _this.formData.sex == null?'3':_this.formData.sex;
+
+                                _this.roleSelect.list = _this.formData.role_list;
+                                _this.roleSelect.selectedIds = _this.formData.role_list.map(item => item.role_id);
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                }
+            },
+            methods: {
+                // 返回
+                onBack() {
+                    QiankunUtil.toPage(props.parentUrl + 'index.html', { backParams: params.backParams });
+                },
+                // 保存表单
+                savaForm() {
+                    this.$refs.form.validate(valid => {
+                        if (valid) {
+                            let param = this.formData;
+                            delete param.role_list;
+                            param.role_id_arr = this.roleSelect.selectedIds.join(',');
+
+                            if (this.operate === 'Edit') {
+                                param.user_id = this.id;
+                            }
+
+                            Ajax.post({
+                                url: '/system/api/user/updateUser?UpdateType=' + this.operate,
+                                param: param,
+                                success(result) {
+                                    if(result.IsSuccess === '1') {
+                                        _this.$message.success('操作成功');
+                                        _this.onBack();
+                                    } else {
+                                        _this.$message.error(result.Msg);
+                                    }
+                                }
+                            });
+                        } else {
+                            this.$message.error('表单校验失败，请检查输入');
+                        }
+                    });
+                },
+                // 加载角色
+                loadRoleSelect(searchKey) {
+                    let param = {
+                        PageNo: 1,
+                        PageCount: 5
+                    };
+
+                    if (searchKey) {
+                        param = {
+                            ...param,
+                            ...{
+                                role_id: searchKey,
+                                role_name: searchKey
+                            }
+                        };
+                    }
+
+                    Ajax.get({
+                        url: '/system/api/role/getRoleList',
+                        param: param,
+                        success(result) {
+                            if (result.IsSuccess === '1') {
+                                _this.roleSelect.list = result.data;
+
+                                // 分离出尚未加载的ID
+                                // _this.roleSelect.selectedIds = _this.formData.role_list.map(item => item.role_id);
+                                const ghostOptions = _this.formData.role_list.filter(item =>
+                                    !result.data.some(role => role.role_id === item.role_id)
+                                );
+
+                                _this.roleSelect.list = ghostOptions.concat(_this.roleSelect.list);
+                            }
+                        }
+                    });
+                },
+                roleSelectChange(selectedIds) {
+                    this.roleSelect.selectedIds = selectedIds;
+                    // 更新表单数据
+                    this.formData.role_list = this.roleSelect.list.filter(role => selectedIds.some(id => role.role_id === id));
+                },
+                roleSelectSearch(key) {
+                    this.loadRoleSelect(key);
+                },
+                roleSelectFocus() {
+                    this.loadRoleSelect();
+                },
+                avatarUploadBeforeUpload(file) {
+                    let isImg = false;
+
+                    switch (file.type) {
+                        case 'image/jpg':
+                        case 'image/jpeg':
+                        case 'image/png':
+                        case 'image/gif':
+                        case 'image/bmp':
+                            isImg = true;
+                    }
+                    if (!isImg) {
+                        this.$message.error('只允许上传jpg、png、gif、bmp类型的图片');
+                    }
+                    const isLt2M = file.size / 1024 / 1024 < 2;
+
+                    if (!isLt2M) {
+                        this.$message.error('图片必须小于2MB');
+                    }
+                    return isImg && isLt2M;
+                },
+                avatarUploadChange(info) {
+                    // console.log(info);
+                    if (info.file.status === 'uploading') {
+                        this.avatarUpload.loading = true;
+                        return;
+                    }
+                    if (info.file.status === 'done') {
+                        // getBase64(info.file.originFileObj, imageUrl => {
+                        //     this.imageUrl = imageUrl;
+                        //     this.avatarUpload.loading = false;
+                        // });
+                    }
+                },
+                avatarUploadPreview() {
+                    if (!viewer) {
+                        // 创建新的 Viewer 实例绑定当前页图片
+                        viewer = new Viewer(document.querySelector('.upload-avatar-wrapper'), {
+                            url: 'src',
+                            filter(image) {
+                                return image.tagName.toLowerCase() === 'img'; // 只预览 img 标签
+                            }
+                        });
+                    }
+
+                    viewer.show();
+                },
+                avatarUploadRemove() {
+                    this.formData.avatar = '';
+                },
+                // 上传头像自定义请求
+                avatarUploadCustomRequest(options) {
+                    const { file, onProgress, onSuccess, onError } = options
+
+                    Ajax.post({
+                        url: '/system/api/upload',
+                        param: {
+                            File: file
+                        },
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.avatarUpload.loading = false;
+                                _this.formData.avatar = result.data;
+                                onSuccess();
+                            } else {
+                                _this.$message.error(result.Msg);
+                                onError();
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

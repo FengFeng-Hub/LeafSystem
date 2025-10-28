@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑页面</title>
+</head>
+<body>
+<div class="ls-card ls-container">
+  <div style="height: 50px;position: sticky;top: 24px;z-index: 1;">
+    <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <a-button v-if="operate !== 'View'" type="primary" size="small" @click="savaForm" style="margin-left: 10px;"><a-icon type="save"></a-icon> 保存</a-button>
+  </div>
+  <a-form-model :model="formData" :rules="formDataRules" ref="form">
+    <a-form-model-item v-if="operate !== 'Add'" label="ID" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="id" disabled/>
+    </a-form-model-item>
+    <a-form-model-item label="姓名" prop="name" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.name" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="用户代码" prop="user_id" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input-password v-model="formData.user_id" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="学号" prop="stuNo" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.stuNo" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="班级" prop="class" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.class" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="性别" prop="sex" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-select v-model="formData.sex" :disabled="formDisabled" style="width: 100px;">
+        <a-select-option value="1">选项1</a-select-option>
+        <a-select-option value="2">选项2</a-select-option>
+      </a-select>
+    </a-form-model-item>
+    <a-form-model-item label="毕业" prop="is_graduate" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-switch :checked="formData.is_graduate == '1'" :disabled="formDisabled" @change="formData.is_graduate = formData.is_graduate === '1'?'0':'1'"/>
+    </a-form-model-item>
+    <a-form-model-item label="生日" prop="birthday" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-date-picker
+              v-model="formData.birthday"
+              :disabled="formDisabled"
+              format="yyyy年MM月DD日" style="width: 200px;"
+              value-format="yyyy-MM-DD"
+      />
+    </a-form-model-item>
+    <a-form-model-item label="创建时间" prop="create_time" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-date-picker
+              v-model="formData.create_time"
+              :disabled="formDisabled"
+              format="yyyy年MM月DD日 HH:mm:ss"
+              value-format="yyyy-MM-DD HH:mm:ss"
+              show-time
+              style="width: 200px;"
+      />
+    </a-form-model-item>
+  </a-form-model>
+</div>
+</body>
+<script>
+  function init(props, params) {
+    let _this = null;
+
+    new Vue({
+      el: ".ls-container",
+      data: {
+        operate: params.operate,
+        id: params.id,
+        // 禁用表单
+        formDisabled: false,
+        // 表单数据
+        formData: {
+          name: null,
+          user_id: null,
+          stuNo: null,
+          class: null,
+          sex: null,
+          is_graduate: null,
+          birthday: null,
+          create_time: null,
+        },
+        // 表单验证
+        formDataRules: {
+          name: [
+            { required: true, message: '姓名为必填项', trigger: 'change' },
+          ],
+          user_id: [
+            { required: true, message: '用户代码为必填项', trigger: 'change' },
+          ],
+          stuNo: [
+            { required: true, message: '学号为必填项', trigger: 'change' },
+          ],
+
+        }
+      },
+      created() {
+        _this = this;
+
+        if (this.operate === 'View') {
+          this.formDisabled = true;
+        }
+
+        if (this.operate !== 'Add') {
+          Ajax.get({
+            url: '/api/testStudent/getTestStudentList',
+            param: {
+              student_id: _this.id
+            },
+            success(result) {
+              if(result.IsSuccess === '1' && result.data.length > 0) {
+                _this.formData = result.data[0];
+              } else {
+                _this.$message.error(result.Msg);
+              }
+            }
+          });
+        }
+      },
+      methods: {
+        // 返回
+        onBack() {
+          QiankunUtil.toPage(props.parentUrl + 'index.html', { backParams: params.backParams });
+        },
+        // 保存表单
+        savaForm() {
+          this.$refs.form.validate(valid => {
+            if (valid) {
+              let param = this.formData;
+
+              if (this.operate === 'Edit') {
+                param.student_id = this.id;
+              }
+
+              Ajax.post({
+                url: '/api/testStudent/updateTestStudent?UpdateType=' + this.operate,
+                param: param,
+                success(result) {
+                  if(result.IsSuccess === '1') {
+                    _this.$message.success('操作成功');
+                    _this.onBack();
+                  } else {
+                    _this.$message.error(result.Msg);
+                  }
+                }
+              });
+            } else {
+              this.$message.error('表单校验失败，请检查输入');
+            }
+          });
+        }
+      }
+    });
+  }
+
+  // 获取qiankun子应用生命周期
+  QiankunUtil.getLifecycles({
+    mount(props) {
+      init(props, props.params);
+    }
+  });
+</script>
+</html>

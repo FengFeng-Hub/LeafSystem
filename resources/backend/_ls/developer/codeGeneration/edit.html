@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+        code {
+            width: 100%;
+            display: inherit;
+            background-color: #1e1e1e !important;
+            border: none !important;
+            color: #eee !important;
+            position: relative;
+        }
+        /* 代码颜色 */
+        /* java */
+        .hljs-keyword { color: orange/* 关键字 */ }
+        .class_,.function_,.hljs-type { color: red/* 类,方法/函数,数据类型 */ }
+        .hljs-variable,.hljs-operator,.hljs-literal,.hljs-params { color: white/* 变量,赋值符号,字面量,参数 */ }
+        .hljs-string { color: green/* 字符串 */ }
+        .hljs-number { color: brown/* 数字 */ }
+        .hljs-comment { color: gray/* 注释 */ }
+        .hljs-meta { color: yellow/* 注解 */ }
+        /* other */
+        .hljs-built_in { color: purple }
+        /* HTML */
+        .hljs-tag,.hljs-name { color: orange !important }
+        .hljs-attr { color: red !important }
+        .hljs-string { color: aqua !important }
+        /* JSON */
+        .hljs-punctuation {color: white/* 标点 */}
+        /* .hljs-keyword,.class_,.function_,.hljs-type,.hljs-variable,.hljs-operator,
+        .hljs-comment,.hljs-string,.hljs-params,.hljs-number,.hljs-meta {color: red},hljs-punctuation */
+        .hljs-ln-n  { width: 35px; }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>{{pageParams.table_name}}表代码生成</b>
+    <a-button type="link" @click="modalVisible.useNote = true"><a-icon type="question-circle"/></a-button>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 300px;">
+            <div class="ls-control-tag">表描述</div>
+            <a-input v-model="formData.table_desc" style="width: calc(100% - 66px);"/>
+        </a-input-group>
+        <a-input-group compact style="width: 300px;">
+            <div class="ls-control-tag">模块名（小驼峰）</div>
+            <a-input v-model="formData.module_name" style="width: calc(100% - 136px);"/>
+        </a-input-group>
+        <a-input-group compact style="width: 300px;">
+            <div class="ls-control-tag">接口根地址</div>
+            <a-input v-model="formData.api_root_address" style="width: calc(100% - 94px);"/>
+        </a-input-group>
+    </div>
+    <div class="ls-table-tool">
+        <div>
+            <a-button type="primary" @click="exportConfig"><a-icon type="download"></a-icon> 导出配置</a-button>
+            <a-button type="primary" @click="document.getElementById('file-input').click()"><a-icon type="upload"></a-icon> 导入配置</a-button>
+            <input type="file" id="file-input" style="display: none;" @change="importConfig"/>
+            <a-button type="primary" @click="generationCode" v-if="$ls.hasPermission('lspk:ls:codeGeneration:generationCode')"><a-icon type="code"></a-icon> 生成代码</a-button>
+        </div>
+    </div>
+    <a-table
+        :columns="tableColumns"
+        :data-source="tableData"
+        :pagination="false"
+        :loading="tableLoading"
+        :scroll="{ x: 1700 }"
+        size="small" bordered
+    >
+        <template slot="search" slot-scope="text, record, index">
+            <a-switch v-if="record.column_key === 'PRI'" size="small" checked disabled></a-switch>
+            <a-switch v-else size="small" :checked="formData.column_info_list[index].search === '1'"
+                @change="(checked) => formData.column_info_list[index].search = checked?'1':'0'"></a-switch>
+        </template>
+        <template slot="sort" slot-scope="text, record, index">
+            <a-switch v-if="record.column_key === 'PRI'" size="small" checked disabled></a-switch>
+            <a-switch v-else size="small" :checked="formData.column_info_list[index].sort === '1'"
+                @change="(checked) => formData.column_info_list[index].sort = checked?'1':'0'"></a-switch>
+        </template>
+        <template slot="not_null" slot-scope="text, record, index">
+            <a-switch v-if="record.column_key === 'PRI'" size="small" disabled></a-switch>
+            <a-switch v-else size="small" :checked="formData.column_info_list[index].not_null === '1'"
+                @change="(checked) => formData.column_info_list[index].not_null = checked?'1':'0'"></a-switch>
+        </template>
+        <template slot="edit" slot-scope="text, record, index">
+            <a-switch v-if="record.column_key === 'PRI'" size="small" disabled></a-switch>
+            <a-switch v-else size="small" :checked="formData.column_info_list[index].edit === '1'"
+                @change="(checked) => formData.column_info_list[index].edit = checked?'1':'0'"></a-switch>
+        </template>
+        <template slot="primaryKey" slot-scope="text, record, index">
+            <a-radio :checked="record.column_name === formData.primary_key_column_name"
+                @change="() => formData.primary_key_column_name = record.column_name"/>
+        </template>
+        <template slot="select" slot-scope="text, record, index">
+            <a-switch size="small" :checked="formData.column_info_list[index].select === '1'"
+                @change="(checked) => formData.column_info_list[index].select = checked?'1':'0'"/>
+        </template>
+        <template slot="_title" slot-scope="text, record, index">
+            <a-input type="text" v-model="formData.column_info_list[index].title"/>
+        </template>
+        <template slot="visible" slot-scope="text, record, index">
+            <a-switch size="small" :checked="formData.column_info_list[index].visible === '1'"
+                @change="(checked) => formData.column_info_list[index].visible = checked?'1':'0'"/>
+        </template>
+        <template slot="align" slot-scope="text, record, index">
+            <a-select v-model="formData.column_info_list[index].align" style="width: 80px;">
+                <a-select-option value="left">left</a-select-option>
+                <a-select-option value="center">center</a-select-option>
+                <a-select-option value="right">right</a-select-option>
+            </a-select>
+        </template>
+        <template slot="ControlType" slot-scope="text, record, index">
+            <a-select v-model="formData.column_info_list[index].ControlType" style="width: 160px;">
+                <a-select-option value="1">输入框</a-select-option>
+                <a-select-option value="2">密码框</a-select-option>
+                <a-select-option value="3">日期选择器</a-select-option>
+                <a-select-option value="4">日期时间选择器</a-select-option>
+                <a-select-option value="5">选择器</a-select-option>
+                <a-select-option value="6">开关</a-select-option>
+            </a-select>
+        </template>
+    </a-table>
+    <!-- 使用说明模态框 -->
+    <a-modal title="使用说明" v-model="modalVisible.useNote">
+        <p>(1)表描述<font color="red">必填</font></p>
+        <p>(2)模块名<font color="red">必填</font>，模块名一般为数据库表名去掉前缀后改成小驼峰</p>
+        <p>(3)接口根地址<font color="red">必填</font></p>
+        <p>(4)主键必须设为<font color="#3eacff;">必填</font></p>
+        <p>(5)主键不允许<font color="#3eacff;">编辑</font></p>
+        <p>(6)<font color="#3eacff;">编辑</font>至少需要选择一个字段</p>
+        <p>(7)只有可以<font color="#3eacff;">编辑</font>的字段才可设为<font color="#3eacff;">必填</font></p>
+        <p>(8)<font color="#3eacff;">select</font>至少需要选择一个字段</p>
+        <p>(9)主键必须<font color="#3eacff;">select</font></p>
+    </a-modal>
+    <!-- 代码生成模态框 -->
+    <a-modal title="代码生成" v-model="modalVisible.codeGeneration" width="90%"
+         :body-style="{ maxHeight: 'calc(100vh - 250px)', overflowY: 'auto' }">
+        <a-tabs v-model="tabPane.currentKey">
+            <a-tab-pane v-for="item,index in codeGenerationResult" :tab="item.filename" :key="index">
+                <pre v-html="item.highlightedCode"></pre>
+            </a-tab-pane>
+        </a-tabs>
+        <template slot="footer">
+            <a-button @click="copy">复制</a-button>
+        </template>
+    </a-modal>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+                pageParams: params,
+                // 表格字段
+                tableColumns: [{
+                    title: '字段名称', dataIndex: 'column_name', width: 150, fixed: "left"
+                }, {
+                    title: '字段信息',
+                    children: [{
+                        title: '备注', dataIndex: 'column_comment', minWidth: 200
+                    }, {
+                        title: '类型', dataIndex: 'column_type', width: 120
+                    }, {
+                        title: '可以为空', dataIndex: 'is_nullable', align: 'center', width: 100
+                    }, {
+                        title: '默认值', dataIndex: 'column_default', align: 'center', width: 150
+                    }, {
+                        title: '字段键', dataIndex: 'column_key', align: 'center', width: 100
+                    }]
+                }, {
+                    title: '前后端',
+                    children: [{
+                        title: '搜索', align: 'center', width: 50, scopedSlots: { customRender: 'search' }
+                    }, {
+                        title: '排序', align: 'center', width: 50, scopedSlots: { customRender: 'sort' }
+                    }, {
+                        title: '必填', align: 'center', width: 50, scopedSlots: { customRender: 'not_null' }
+                    }, {
+                        title: '编辑', align: 'center', width: 50, scopedSlots: { customRender: 'edit' }
+                    }]
+                }, {
+                    title: '后端',
+                    children: [{
+                        title: '主键', align: 'center', width: 50, scopedSlots: { customRender: 'primaryKey' }
+                    }, {
+                        title: 'select', align: 'center', width: 100, scopedSlots: { customRender: 'select' }
+                    }]
+                }, {
+                    title: '前端',
+                    children: [{
+                        title: '标题', align: 'center', width: 200, scopedSlots: { customRender: '_title' }
+                    }, {
+                        title: '显示', align: 'center', width: 50, scopedSlots: { customRender: 'visible' }
+                    }, {
+                        title: '对齐', align: 'center', width: 100, scopedSlots: { customRender: 'align' }
+                    }, {
+                        title: '控件类型', align: 'center', width: 180, scopedSlots: { customRender: 'ControlType' }
+                    }]
+                }],
+                // 表格数据
+                tableData: [],
+                tableLoading: false,
+                formData: {},
+                // 模态框显示
+                modalVisible: {
+                    useNote: false,
+                    codeGeneration: false
+                },
+                // 代码生成结果
+                codeGenerationResult: [],
+                tabPane: {
+                    currentKey: 0,
+                }
+            },
+            created() {
+                _this = this;
+                // 加载数据
+                this.loadTableList();
+            },
+            methods: {
+                // 返回
+                onBack() {
+                    QiankunUtil.toPage(props.parentUrl + 'index.html', {
+                        page: params.page,
+                        pageSize: params.pageSize
+                    });
+                },
+                // 加载表格列表
+                loadTableList() {
+                    this.tableLoading = true;
+                    Ajax.get({
+                        url: '/system/api/codeGeneration/getDBTableFieldInfo',
+                        param: { table_name: params.table_name },
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.tableData = result.data;
+                                _this.formData.column_info_list = [];
+                                let tableNameHump = underlineToHump(params.table_name);
+
+                                _this.formData = {
+                                    table_name: params.table_name,
+                                    table_desc: params.table_comment,
+                                    module_name: tableNameHump,
+                                    api_root_address: '/api/' + tableNameHump + '/',
+                                    primary_key_column_name: '',
+                                    column_info_list: []
+                                };
+
+                                result.data.forEach((item) => {
+                                    if (_this.formData.primary_key_column_name === '' && item.column_key === 'PRI') {
+                                        _this.formData.primary_key_column_name = item.column_name;
+                                    }
+
+                                    let controlType = '1';
+
+                                    switch (item.column_type) {
+                                        case 'date':
+                                            controlType = '3'
+                                            break;
+                                        case 'datetime':
+                                            controlType = '4'
+                                            break;
+                                        case 'tinyint':
+                                            controlType = '6'
+                                            break;
+                                    }
+
+                                    _this.formData.column_info_list.push({
+                                        column_name: item.column_name,
+                                        search: item.column_key === 'PRI'?'1':'0',
+                                        sort: item.column_key === 'PRI'?'1':'0',
+                                        not_null: (item.is_nullable === 'YES' || item.column_key === 'PRI')?'0':'1',
+                                        edit: item.column_key === 'PRI'?'0':'1',
+                                        select: '1',
+                                        title: item.column_comment,
+                                        visible: '1',
+                                        align: 'center',
+                                        ControlType: controlType
+                                    });
+                                });
+
+                                _this.tableLoading = false;
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                },
+                // 生成代码
+                generationCode() {
+                    Ajax.post({
+                        url: '/system/api/codeGeneration/generationCode',
+                        param: _this.formData,
+                        header: {'Content-Type': 'application/json'},
+                        success(result) {
+                            if (result.IsSuccess === '1') {
+                                _this.codeGenerationResult = result.data;
+                                _this.modalVisible.codeGeneration = true;
+                                // console.log(hljs.highlight('java', result.data[0].code_content).value)
+
+                                _this.codeGenerationResult = _this.codeGenerationResult.map((item) => {
+                                    let highlightedCode = hljs.highlightAuto(item.code_content).value;
+
+
+                                    // 手动为代码添加行号
+                                    const lines = highlightedCode.split('\n');
+                                    highlightedCode = lines.map((line, index) => {
+                                        return `<span class="line-number">${index + 1}</span> ${line}`;
+                                    });
+                                    highlightedCode = `<pre><code class="hljs">${highlightedCode.join('\n')}</code></pre>`;
+                                    return {
+                                        ...item,
+                                        highlightedCode: highlightedCode
+                                    };
+                                });
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                },
+                // 复制
+                copy() {
+                    navigator.clipboard.writeText(this.codeGenerationResult[this.tabPane.currentKey].code_content).then(() => {
+                        _this.$message.info('复制成功');
+                    });
+                },
+                // 导出配置
+                exportConfig() {
+                    // 将 formData 转换为 JSON 字符串
+                    const jsonConfig = JSON.stringify(this.formData, null, 2);
+                    // 创建一个 Blob 对象
+                    const blob = new Blob([jsonConfig], { type: 'application/json' });
+                    // 创建一个下载链接
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'code-' + params.table_name + '-config.json';  // 文件名
+                    link.click();
+                },
+                // 导入配置
+                importConfig(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // 创建 FileReader 读取文件
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            // 解析 JSON 内容
+                            const importedConfig = JSON.parse(e.target.result);
+
+                            // 定义 formData 的预期结构
+                            const expectedFormDataSchema = {
+                                table_name: 'string',
+                                table_desc: 'string',
+                                module_name: 'string',
+                                api_root_address: 'string',
+                                primary_key_column_name: 'string',
+                                column_info_list: 'object',
+                            };
+
+                            // 校验导入的配置与预期结构是否匹配
+                            const validateConfig = (config, schema) => {
+                                for (const key in schema) {
+                                    if (!config.hasOwnProperty(key)) {
+                                        return `缺少关键字: ${key}`;
+                                    }
+
+                                    const expectedType = schema[key];
+                                    const actualType = typeof config[key];
+
+                                    if (expectedType !== actualType) {
+                                        return `关键字 ${key} 的类型不匹配. 预期: ${expectedType}, 实际: ${actualType}`;
+                                    }
+
+                                    // 特别检查 `column_info_list` 字段，它是一个对象数组
+                                    if (key === 'column_info_list' && Array.isArray(config[key])) {
+                                        for (const item of config[key]) {
+                                            if (typeof item !== 'object') {
+                                                return `column_info_list 中的项类型无效。预期类型是对象。`;
+                                            }
+                                        }
+                                    }
+                                }
+                                return null;
+                            };
+
+                            // 校验导入的配置
+                            const validationError = validateConfig(importedConfig, expectedFormDataSchema);
+
+                            if (validationError) {
+                                this.$message.error(validationError);  // 如果校验失败，显示错误信息
+                            } else {
+                                console.log(importedConfig)
+                                // 校验通过，更新 formData
+                                this.formData = importedConfig;
+                                this.$message.success('配置导入成功');  // 如果成功，显示成功信息
+                            }
+                        } catch (error) {
+                            this.$message.error('无效的配置文件');
+                        }
+                    };
+
+                    // 读取文件内容
+                    reader.readAsText(file);
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+
+    //下划线转换驼峰
+    function underlineToHump(str) {
+        // 如果首字母是_，执行 replace 时会多一个_，这里需要去掉
+        if(str.slice(0,1) === '_'){
+            str = str.slice(1);
+        }
+        return str.replace(/([^_])(?:_+([^_]))/g, function ($0, $1, $2) {
+            return $1 + $2.toUpperCase();
+        });
+    }
+
+    //驼峰转换下划线
+    function humpToUnderline(str) {
+        let temp = str.replace(/[A-Z]/g, function (match) {
+            return "_" + match.toLowerCase();
+        });
+        // 如果首字母是大写，执行replace时会多一个_，这里需要去掉
+        if(temp.slice(0,1) === '_'){
+            temp = temp.slice(1);
+        }
+        return temp;
+    }
+</script>
+</html>

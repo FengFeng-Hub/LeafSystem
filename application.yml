@@ -1,0 +1,85 @@
+server:
+  port: 8081
+
+spring:
+  # Quartz调度器
+  quartz:
+    job-store-type: memory  # 或 jdbc
+    jdbc:
+      initialize-schema: always  # 如果使用数据库存储
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/leaf.system?characterEncoding=UTF-8&serverTimezone=UTC&allowMultiQueries=true
+    username: root
+    password: 123456
+#    type: com.alibaba.druid.pool.DruidDataSource
+    # 连接池配置
+    druid:
+      # 初始连接数 默认:0
+      initialSize: 0
+      # 最大并发连接数 默认:8
+      maxActive: 8
+      # 最小空闲连接数 默认:0
+      minIdle: 0
+  # redis
+  redis:
+    host: 127.0.0.1
+    port: 6379
+#    password: 123456
+    database: 0
+    jedis:
+      pool:
+        # 连接池最大连接数
+        max-active: 8
+        # 连接池中的最大空闲连接
+        max-idle: 8
+        # 连接池中的最小空闲连接
+        min-idle: 0
+        # 连接池最大阻塞等待时间
+        max-wait: -1
+  # 邮箱
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 2676355712@qq.com
+    password: xgqjnyrkdtlwdjce
+
+
+  servlet:
+    multipart:
+      # 上传单个文件大小
+      max-file-size: -1
+      # 总上传文件大小
+      max-request-size: -1
+  mvc:
+    # URL响应地址（Springboot默认为/**)
+    static-path-pattern: /**
+  web:
+    resources:
+      static-locations: file:./resources/
+
+# 启动日志保存位置
+#logging:
+#  file:
+#    path: D:/spring-start-log
+
+leaf:
+  resource: /resources/
+  # 是否开启全局跨域
+  global.cors: false
+  # 前/后台用户登录有66效时间(秒) 0表示立马失效 -1表示浏览器关闭后失效（token过期时间为24小时） 默认:后台 2592000秒（30天） 前台 7776000秒（90天）
+  login:
+    frontend_time: 7776000
+    backend_time: 2592000
+  validCode:
+    # 验证码有效时间（秒） 默认:180
+    duration: 180
+  validPuzzle:
+    # 验证拼图有效时间（秒） -1表示永久有效 默认:120
+    duration: 120
+    # 拼图验证拼图路径
+    path: /ls/puzzleImg/
+    # 验证拼图有效范围（到正确点位的距离） 800为最大值，默认:5
+    range: 10
+

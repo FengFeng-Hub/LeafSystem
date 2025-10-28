@@ -1,0 +1,150 @@
+/* 变量 */
+:root {
+    --leaf-color-primary: #007bff;
+    --leaf-color-success: #52c41a;
+    --leaf-color-info: #1890ff;
+    --leaf-color-warning: #faad14;
+    --leaf-color-error: #ff4d4f;
+    --leaf-backend-color-checked: rgba(14,125,236,.692);
+    --leaf-border-color: #dee2e6;
+    --leaf-border-color-focus: #86b7fe;
+    --leaf-box-shadow-bolor-focus: rgba(13,110,253,.25);
+    --leaf-outline-color-warring-focus: rgba(255,0,0,.25);
+    /* 常用盒子阴影 */
+    --leaf-box-shadow-1: 0px 5px 10px rgba(0,0,0,.15);
+    --leaf-box-shadow-2: rgba(0,0,0,.12) 0 1px 6px,rgba(0,0,0,.12) 0 1px 4px;
+    --leaf-box-shadow-3: 0 3px 3px -2px rgba(0,0,0,.2),0 3px 4px 0 rgba(0,0,0,.14),0 1px 8px 0 rgba(0,0,0,.12);
+    --leaf-box-shadow-4: 0 6px 16px 0 rgba(0,0,0,.08),0 3px 6px -4px rgba(0,0,0,.12),0 9px 28px 8px rgba(0,0,0,.05);
+}
+
+/* 图标 50px*50px */
+.leaf-icon-success,.leaf-icon-info,.leaf-icon-warning,.leaf-icon-error {
+    transform-origin: left top;
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    position: relative;
+}
+.leaf-icon-success::after,.leaf-icon-info::after,.leaf-icon-warning::after,.leaf-icon-error::after,
+.leaf-icon-success::before,.leaf-icon-info::before,.leaf-icon-warning::before,.leaf-icon-error::before {
+    position: absolute;
+    content: "";
+    background-color: #fff;
+    border-radius: 4%;
+}
+.leaf-icon-success {
+    background-color: var(--leaf-color-success);
+}
+.leaf-icon-info {
+    background-color: var(--leaf-color-info);
+}
+.leaf-icon-warning {
+    background-color: var(--leaf-color-warning);
+}
+.leaf-icon-error {
+    background-color: var(--leaf-color-error);
+}
+.leaf-icon-success::after {
+    top: 20%;
+    left: 55%;
+    width: 10%;
+    height: 60%;
+}
+.leaf-icon-success::before {
+    top: 37.072%;
+    left: 26.715%;
+    width: 10%;
+    height: 40%;
+}
+.leaf-icon-success::after {
+    transform: rotate(45deg);
+}
+.leaf-icon-success::before {
+    transform: rotate(-45deg);
+}
+.leaf-icon-warning::after,.leaf-icon-info::after {
+    top: 15%;
+    left: 50%;
+    margin-left: -6%;
+    width: 12%;
+    height: 12%;
+    border-radius: 50%;
+}
+.leaf-icon-info::before,.leaf-icon-warning::before {
+    top: 35%;
+    left: 50%;
+    margin-left: -6%;
+    width: 12%;
+    height: 45%;
+}
+.leaf-icon-error::after,.leaf-icon-error::before {
+    top: 20%;
+    left: 50%;
+    width: 10%;
+    height: 60%;
+    margin-left: -4%;
+}
+.leaf-icon-error::after {
+    transform: rotate(-45deg);
+}
+.leaf-icon-error::before {
+    transform: rotate(45deg);
+}
+
+/* 加载 */
+.leaf-spinner {
+    border: 4px solid currentcolor;
+}
+.leaf-spinner {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border-right-color: transparent;
+    animation: 0.75s linear infinite spinner-border;
+}
+
+/* 开关 */
+.leaf-switch input { display: none; }
+.leaf-switch span {
+    width: 50px;
+    box-shadow: rgba(0,0,0,.12) 0 0.4px 2.4px,rgba(0,0,0,.12) 0 0.4px 1.6px;
+    display: inline-block;
+    position: relative;
+    border-radius: 9999999999px;-webkit-border-radius: 9999999999px;
+    cursor: pointer;
+    background-color: #d9d9d9;
+}
+.leaf-switch span::before {
+    /* 实现宽高比为2:1 */
+    content: '';
+    padding-top: 50%;
+    float: left;
+}
+.leaf-switch span:after {
+    content: '';
+    width: 40%;
+    height: 75%;
+    border-radius: 50%;-webkit-border-radius: 50%;
+    position: absolute;
+    left: 6.25%;
+    top: 12.5%;
+    background-color: #fff;
+    transition: all .4s ease;-webkit-transition: all .4s ease;-o-transition: all .4s ease;
+}
+.leaf-switch input:checked~span:after { left: 53.75%; }
+.leaf-switch input:checked~span { background-color: var(--leaf-color-primary); }
+
+/* 表单验证 */
+.leaf-valid-warning {
+    border: 1px solid red !important;
+}
+.leaf-valid-warning:focus {
+    box-shadow:0 0 0 .25rem var(--leaf-outline-color-warring-focus);
+    outline: none;
+}
+p[leaf-valid-field] {
+    margin: 0;
+    font-size: 14px;
+}

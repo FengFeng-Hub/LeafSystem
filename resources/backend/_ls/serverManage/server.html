@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务器监控</title>
+    <style>
+        .ant-card {
+            margin-bottom: 16px;
+        }
+        .info-card {
+            height: 100%;
+        }
+        .info-table {
+            width: 100%;
+        }
+        .info-table th {
+            background-color: #fafafa;
+        }
+        .disk-table {
+            width: 100%;
+        }
+        .disk-table th {
+            background-color: #fafafa;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <a-row :gutter="16">
+        <a-col :xl="12" :lg="24" style="margin-bottom: 16px;">
+            <a-card class="info-card" title="服务器信息">
+                <template slot="extra">
+                    <a-icon type="server"></a-icon>
+                </template>
+                <a-table
+                    :columns="serverColumns"
+                    :data-source="serverData"
+                    :pagination="false"
+                    size="small"
+                    bordered
+                ></a-table>
+            </a-card>
+        </a-col>
+        <a-col :xl="12" :lg="24" style="margin-bottom: 16px;">
+            <a-card class="info-card" title="Java虚拟机信息">
+                <template slot="extra">
+                    <a-icon type="coffee"></a-icon>
+                </template>
+                <a-table
+                    :columns="javaColumns"
+                    :data-source="javaData"
+                    :pagination="false"
+                    size="small"
+                    bordered
+                ></a-table>
+            </a-card>
+        </a-col>
+    </a-row>
+    <a-card title="CPU信息">
+        <template slot="extra">
+            <a-icon type="dashboard"></a-icon>
+            <a-radio-group v-model="cpuRefreshInterval" @change="handleChangeTimer">
+                <a-radio-button value="1000">1秒</a-radio-button>
+                <a-radio-button value="2000">2秒</a-radio-button>
+                <a-radio-button value="3000">3秒</a-radio-button>
+                <a-radio-button value="5000">5秒</a-radio-button>
+                <a-radio-button value="10000">10秒</a-radio-button>
+                <a-radio-button value="-1">暂停</a-radio-button>
+            </a-radio-group>
+        </template>
+        <div>
+            <strong>核心数:</strong> <span id="cpu_core_num"></span>&emsp;&emsp;&emsp;
+            <strong>负载率:</strong> <span id="cpu_load_rate">0%</span>
+            <div class="chart-container">
+                <div id="cpu-chart" style="width: 100%;height:400px;"></div>
+            </div>
+        </div>
+    </a-card>
+    <a-card title="内存信息">
+        <template slot="extra">
+            <a-icon type="pie-chart"></a-icon>
+        </template>
+        <a-table
+            :columns="memoryColumns"
+            :data-source="memoryData"
+            :pagination="false"
+            size="small"
+            bordered
+        ></a-table>
+    </a-card>
+    <a-card title="磁盘信息">
+        <template slot="extra">
+            <a-icon type="hdd"></a-icon>
+        </template>
+        <a-table
+            :columns="diskColumns"
+            :data-source="diskData"
+            :pagination="false"
+            size="small"
+            bordered
+        ></a-table>
+    </a-card>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+        new Vue({
+            el: '#app',
+            data: {
+                // 服务器信息表格列配置
+                serverColumns: [
+                    {title: '属性', dataIndex: 'name', key: 'name', width: '30%'},
+                    {title: '值', dataIndex: 'value', key: 'value'}
+                ],
+                serverData: [],
+
+                // Java虚拟机信息表格列配置
+                javaColumns: [
+                    {title: '属性', dataIndex: 'name', key: 'name', width: '30%'},
+                    {title: '值', dataIndex: 'value', key: 'value'}
+                ],
+                javaData: [],
+                // 内存信息表格列配置
+                memoryColumns: [
+                    {title: '', dataIndex: 'name', key: 'name', width: '20%'},
+                    {title: '内存', dataIndex: 'memory', key: 'memory'},
+                    {title: 'JVM', dataIndex: 'jvm', key: 'jvm'}
+                ],
+                memoryData: [
+                    {key: '1', name: '最大内存', memory: '-', jvm: '0 MB'},
+                    {key: '2', name: '总内存', memory: '0 GB', jvm: '0 MB'},
+                    {key: '3', name: '已用内存', memory: '0 GB', jvm: '0 MB'},
+                    {key: '4', name: '剩余内存', memory: '0 GB', jvm: '0 MB'},
+                    {key: '5', name: '使用率', memory: '0%', jvm: '0%'}
+                ],
+                // 磁盘信息表格列配置
+                diskColumns: [
+                    {title: '盘符路径', dataIndex: 'disk_path', key: 'disk_path'},
+                    {title: '文件系统', dataIndex: 'file_system', key: 'file_system'},
+                    {title: '总大小', dataIndex: 'total_size', key: 'total_size'},
+                    {title: '已用大小', dataIndex: 'used_size', key: 'used_size'},
+                    {title: '可用大小', dataIndex: 'remain_size', key: 'remain_size'},
+                    {title: '已用百分比', dataIndex: 'used_percentage', key: 'used_percentage'}
+                ],
+                diskData: [],
+                // CPU图表数据
+                cpuChart: null,
+                cpuLabels: [],
+                cpuData: [],
+                cpuRefreshInterval: 1000
+            },
+            mounted() {
+                _this = this;
+                // 初始化CPU图表
+                this.initCpuChart();
+                // 获取服务器信息
+                this.getServerInfo(true);
+                // 设置定时器
+                this.timer = setInterval(this.getServerInfo, this.cpuRefreshInterval);
+            },
+            beforeDestroy() {
+                // 清除定时器
+                clearInterval(this.timer);
+            },
+            methods: {
+                initCpuChart() {
+                    // 获取DOM元素
+                    const chartDom = document.getElementById('cpu-chart');
+                    this.cpuChart = echarts.init(chartDom);
+
+                    // 初始配置
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: '{b}<br/>{a0}: {c0}%'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: this.cpuLabels,
+                            axisLabel: {
+                                rotate: 45
+                            }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            axisLabel: {
+                                formatter: '{value}%'
+                            },
+                            min: 0,
+                            // max: 100
+                        },
+                        series: [{
+                            name: 'CPU负载率',
+                            type: 'line',
+                            data: this.cpuData,
+                            smooth: true,
+                            lineStyle: {
+                                color: '#1890ff',
+                                width: 2
+                            },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0,
+                                    y: 0,
+                                    x2: 0,
+                                    y2: 1,
+                                    colorStops: [{
+                                        offset: 0,
+                                        color: 'rgba(24, 144, 255, 0.5)'
+                                    }, {
+                                        offset: 1,
+                                        color: 'rgba(24, 144, 255, 0.1)'
+                                    }]
+                                }
+                            },
+                            symbol: 'circle',
+                            symbolSize: 6,
+                            itemStyle: {
+                                color: '#1890ff'
+                            }
+                        }],
+                        grid: {
+                            left: '1%',
+                            right: '1%',
+                            bottom: '2%',
+                            containLabel: true
+                        }
+                    };
+
+                    this.cpuChart.setOption(option);
+
+                    // 响应式调整
+                    window.addEventListener('resize', () => {
+                        this.cpuChart.resize();
+                    });
+                },
+                getServerInfo(isFirst = false) {
+                    Ajax.get({
+                        url: '/system/api/server/getServerInfo',
+                        param: {'IsRepeatRequest': isFirst ? 0 : 1},
+                        success: (result) => {
+                            if (result.IsSuccess === '1') {
+                                if (isFirst) {
+                                    // 初始化服务器信息
+                                    _this.serverData = [
+                                        {key: '1', name: '服务名称', value: result.data['server_info']['server_name']},
+                                        {key: '2', name: '服务IP', value: result.data['server_info']['server_ip']},
+                                        {key: '3', name: '操作系统', value: result.data['server_info']['operate_system']},
+                                        {key: '4', name: '系统架构', value: result.data['server_info']['system_architecture']}
+                                    ];
+
+                                    // 初始化Java虚拟机信息
+                                    _this.javaData = [
+                                        {key: '1', name: 'Java名称', value: result.data['java_vm_info']['java_name']},
+                                        {key: '2', name: 'Java版本', value: result.data['java_vm_info']['java_version']},
+                                        {
+                                            key: '3',
+                                            name: 'Java安装路径',
+                                            value: result.data['java_vm_info']['java_install_path']
+                                        },
+                                        {key: '4', name: '项目路径', value: result.data['java_vm_info']['project_path']}
+                                    ];
+
+                                    // 初始化磁盘信息
+                                    _this.diskData = result.data['disk_info_list'].map((disk, index) => ({
+                                        key: index.toString(),
+                                        disk_path: disk['disk_path'],
+                                        file_system: disk['file_system'],
+                                        total_size: disk['total_size'],
+                                        used_size: disk['used_size'],
+                                        remain_size: disk['remain_size'],
+                                        used_percentage: disk['used_percentage']
+                                    }));
+                                }
+
+                                // 更新CPU信息
+                                document.getElementById('cpu_core_num').textContent = result.data['cpu_info']['cpu_core_num'];
+                                document.getElementById('cpu_load_rate').textContent = result.data['cpu_info']['cpu_load_rate'];
+
+                                // 更新内存信息
+                                _this.memoryData = [
+                                    {
+                                        key: '1',
+                                        name: '最大内存',
+                                        memory: '-',
+                                        jvm: result.data['memory_info']['jvm_memory_info']['max_memory']
+                                    },
+                                    {
+                                        key: '2',
+                                        name: '总内存',
+                                        memory: result.data['memory_info']['total_memory'],
+                                        jvm: result.data['memory_info']['jvm_memory_info']['total_memory']
+                                    },
+                                    {
+                                        key: '3',
+                                        name: '已用内存',
+                                        memory: result.data['memory_info']['used_memory'],
+                                        jvm: result.data['memory_info']['jvm_memory_info']['used_memory']
+                                    },
+                                    {
+                                        key: '4',
+                                        name: '剩余内存',
+                                        memory: result.data['memory_info']['free_memory'],
+                                        jvm: result.data['memory_info']['jvm_memory_info']['free_memory']
+                                    },
+                                    {
+                                        key: '5',
+                                        name: '使用率',
+                                        memory: result.data['memory_info']['use_rate'],
+                                        jvm: result.data['memory_info']['jvm_memory_info']['use_rate']
+                                    }
+                                ];
+
+                                // 更新CPU图表数据
+                                const cpuLoadRate = parseFloat(result.data['cpu_info']['cpu_load_rate']);
+
+                                if (_this.cpuLabels.length < 7) {
+                                    _this.cpuLabels.push(new Date().toLocaleTimeString());
+                                    _this.cpuData.push(cpuLoadRate);
+                                } else {
+                                    for (let i = 0; i < 6; i++) {
+                                        _this.cpuLabels[i] = _this.cpuLabels[i + 1];
+                                        _this.cpuData[i] = _this.cpuData[i + 1];
+                                    }
+                                    _this.cpuLabels[6] = new Date().toLocaleTimeString();
+                                    _this.cpuData[6] = cpuLoadRate;
+                                }
+
+                                // 更新ECharts图表
+                                _this.cpuChart.setOption({
+                                    xAxis: {
+                                        data: _this.cpuLabels
+                                    },
+                                    series: [{
+                                        data: _this.cpuData
+                                    }]
+                                });
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                },
+                handleChangeTimer() {
+                    clearInterval(this.timer);
+
+                    if (this.cpuRefreshInterval > 0) {
+                        this.timer = setInterval(this.getServerInfo, this.cpuRefreshInterval);
+                    }
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+        /* 拖拽排序 */
+        .ls-table-handle-drag {
+            cursor: move;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <b>菜单列表</b>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 400px;">
+            <a-select v-model="searchConfig.searchType" style="width: 130px;">
+                <a-select-option value="menu_id">菜单代码</a-select-option>
+                <a-select-option value="menu_name">菜单名称</a-select-option>
+                <a-select-option value="parent_menu_id">父级菜单代码</a-select-option>
+                <a-select-option value="parent_menu_name">父级菜单名称</a-select-option>
+            </a-select>
+            <a-select v-model="searchConfig.IsEqual" style="width: 70px;">
+                <a-select-option value="0">包含</a-select-option>
+                <a-select-option value="1">等于</a-select-option>
+            </a-select>
+            <a-input v-model="searchConfig.searchKey" placeholder="请输入搜索关键字" style="width: calc(100% - 200px);"/>
+        </a-input-group>
+        <a-input-group compact style="width: 130px;">
+            <div class="ls-control-tag">显示</div>
+            <a-select v-model="searchConfig.model.is_show" style="width: calc(100% - 52px);">
+                <a-select-option value="">所有</a-select-option>
+                <a-select-option value="1">是</a-select-option>
+                <a-select-option value="0">否</a-select-option>
+            </a-select>
+        </a-input-group>
+        <a-button type="primary" @click="search(false)"><a-icon type="search"></a-icon> 搜索</a-button>
+        <a-button @click="search(true)"><a-icon type="sync"></a-icon> 重置</a-button>
+    </div>
+    <div class="ls-table-tool">
+        <a-select
+            mode="multiple"
+            size="size"
+            placeholder="请选择菜单类型"
+            :value="searchConfig.model.type_arr"
+            @change="handleMenuTypeChange"
+            style="width: 500px;"
+        >
+            <a-select-option key="1" value="1">菜单目录</a-select-option>
+            <a-select-option key="2" value="2">菜单项</a-select-option>
+            <a-select-option key="3" value="3">iframe</a-select-option>
+            <a-select-option key="4" value="4">此页面</a-select-option>
+            <a-select-option key="5" value="5">新页面</a-select-option>
+            <a-select-option key="6" value="6">控件</a-select-option>
+        </a-select>
+    </div>
+    <div class="ls-table-tool" style="width: 100%;display: flex;justify-content: space-between;">
+        <div>
+            <a-button type="primary" @click="edit(null,'Add')" v-if="$ls.hasPermission('lspk:ls:menu:add')"><a-icon type="plus"></a-icon> 新建</a-button>
+            <span v-if="$ls.hasPermission('lspk:ls:menu:edit:sort')"><a-switch @change="handleChangIsShowSort"></a-switch> 拖拽排序</span>
+        </div>
+    </div>
+    <a-table
+        :columns="tableColumns"
+        :data-source="tableData"
+        :pagination="tablePagination"
+        @change="handleTableChange"
+        :loading="tableLoading"
+        :scroll="{ x: 1900 }"
+        size="small" bordered
+        ref="LSTable"
+    >
+        <template slot="SortAction"><a-icon type="menu" title="拖拽排序" class="ls-table-handle-drag"/></template>
+        <template slot="action" slot-scope="text, record">
+            <a-button type="link" size="small" title="查看" @click="edit(record.menu_id,'View')"><a-icon type="eye"></a-icon></a-button>
+            <a-button type="link" size="small" title="编辑" @click="edit(record.menu_id,'Edit')" v-if="$ls.hasPermission('lspk:ls:menu:edit')"><a-icon type="edit"></a-icon></a-button>
+            <a-popconfirm title="确定删除该项？" v-if="$ls.hasPermission('lspk:ls:menu:delete')" @confirm="edit(record.menu_id,'Delete')" @cancel="" ok-text="确定" cancel-text="取消">
+                <a-button type="link" size="small" title="删除" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
+            </a-popconfirm>
+        </template>
+        <template slot="menu_name" slot-scope="text, record">
+            <a v-if="record.type === '2'" @click="QiankunUtil.toPage(record.url, {
+                menu_name: record.menu_name,
+                backMenuParams: {
+                    PageNo: tablePagination.current,
+                    PageCount: tablePagination.pageSize,
+                    SortField: tableSort.field,
+                    SortOrder: tableSort.order,
+                    searchParams: searchConfig.params
+                }
+            })">{{text}}</a>
+            <a v-else-if="record.type === '3' || record.type === '4' || record.type === '5'" :href="record.url" target="_blank" style="text-decoration: underline;">{{text}}</a>
+            <template v-else>{{text}}</template>
+        </template>
+        <template slot="type" slot-scope="text">
+            <a-tag v-if="text == '1'" color="orange">菜单目录</a-tag>
+            <a-tag v-else-if="text == '2'" color="blue">菜单项</a-tag>
+            <a-tag v-else-if="text == '3'" color="blue">iframe</a-tag>
+            <a-tag v-else-if="text == '4'" color="yellow">此页面</a-tag>
+            <a-tag v-else-if="text == '5'" color="yellow">新页面</a-tag>
+            <a-tag v-else-if="text == '6'" color="green">控件</a-tag>
+            <a-tag v-else color="gray">未知</a-tag>
+        </template>
+        <template slot="is_show" slot-scope="text, record">
+            <a-switch size="small" @change="updateIsShow(record.menu_id,record)" :checked="text === '1'" :disabled="!$ls.hasPermission('lspk:ls:menu:edit:isShow')"/>
+        </template>
+        <template slot="sort" slot-scope="text, record, index">
+            <a-button type="link" size="small" title="置顶" @click="sort( index, 'top')" v-if="$ls.hasPermission('lspk:ls:menu:edit:sort')"><a-icon type="vertical-align-top"></a-icon></a-button>
+            <a-button type="link" size="small" title="上移" @click="sort(index, 'up')" v-if="$ls.hasPermission('lspk:ls:menu:edit:sort')"><a-icon type="up"/></a-button>
+            {{text}}
+            <a-button type="link" size="small" title="下移" @click="sort(index, 'down')" v-if="$ls.hasPermission('lspk:ls:menu:edit:sort')"><a-icon type="down"/></a-button>
+            <a-button type="link" size="small" title="置底" @click="sort(index, 'bottom')" v-if="$ls.hasPermission('lspk:ls:menu:edit:sort')"><a-icon type="vertical-align-bottom"/></a-button>
+        </template>
+        <template slot="menu_icon" slot-scope="text">
+            <a-icon :type="text"></a-icon>
+        </template>
+        <template slot="url" slot-scope="text, record">
+            <a-button v-if="text && text !== ''" type="link" size="small" @click="$info({
+                title: record.menu_name,
+                content: text
+            });">[点击查看]</a-button>
+        </template>
+    </a-table>
+</div>
+</body>
+<script src="./js/index.js"></script>
+</html>

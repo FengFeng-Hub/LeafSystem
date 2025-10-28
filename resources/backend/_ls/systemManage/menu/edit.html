@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑页面</title>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <div style="height: 50px;position: sticky;top: 24px;z-index: 1;">
+        <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon> 返回</a-button>
+        <a-button v-if="operate !== 'View'" type="primary" size="small" @click="savaForm" style="margin-left: 10px;"><a-icon type="save"></a-icon> 保存</a-button>
+    </div>
+    <a-form-model :model="formData" :rules="formDataRules" ref="form">
+        <a-form-model-item v-if="operate !== 'Add'" label="ID" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-input v-model="id" disabled/>
+        </a-form-model-item>
+        <a-form-model-item label="菜单名称" prop="menu_name" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-input v-model="formData.menu_name" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="父级菜单代码" prop="parent_menu_id" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-select
+                show-search
+                allow-clear
+                v-model="formData.parent_menu_id"
+                placeholder="选择父级菜单"
+                @change="menuSelectChange"
+                @search="menuSelectSearch"
+                @focus="menuSelectFocus"
+                :filter-option="false"
+                :disabled="formDisabled"
+            >
+                <a-select-option v-for="item in menuSelect.list" :key="item.menu_id" :value="item.menu_id">
+                    {{item.menu_id}} - {{item.menu_name}}
+                </a-select-option>
+            </a-select>
+        </a-form-model-item>
+        <a-form-model-item label="菜单图标" prop="menu_icon" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-input v-model="formData.menu_icon" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="url" prop="url" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-input v-model="formData.url" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="类型" prop="type" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-select v-model="formData.type">
+                <a-select-option value="1">菜单目录</a-select-option>
+                <a-select-option value="2">菜单项</a-select-option>
+                <a-select-option value="3">iframe</a-select-option>
+                <a-select-option value="4">此页面</a-select-option>
+                <a-select-option value="5">新页面</a-select-option>
+                <a-select-option value="6">控件</a-select-option>
+            </a-select>
+        </a-form-model-item>
+        <a-form-model-item label="权限键" prop="permission_key" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-input v-model="formData.permission_key" :disabled="formDisabled"/>
+        </a-form-model-item>
+        <a-form-model-item label="是否显示" prop="is_show" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-switch :checked="formData.is_show === '1'" @change="formData.is_show = formData.is_show === '1'?'0':'1'"/>
+        </a-form-model-item>
+        <a-form-model-item label="备注" prop="memo" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-textarea v-model="formData.memo" :disabled="formDisabled" :rows="5" :maxlength="250" placeholder="最多输入 250 个字符"/>
+        </a-form-model-item>
+        <a-form-model-item v-if="operate !== 'Add'" label="排序" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+            <a-input v-model="formData.sort" disabled/>
+        </a-form-model-item>
+    </a-form-model>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+                operate: params.operate,
+                id: params.id,
+                // 禁用表单
+                formDisabled: false,
+                // 表单数据
+                formData: {
+                    menu_name: '',
+                    parent_menu_id: '',
+                    parent_menu_name: '',
+                    menu_icon: '',
+                    url: '',
+                    type: '',
+                    permission_key: '',
+                    is_show: '1'
+                },
+                // 表单验证
+                formDataRules: {
+                    menu_name: [
+                        { required: true, message: '此项为必填项', trigger: 'change' },
+                        { max: 50, message: '长度不能超过 50 个字符', trigger: 'change' }
+                    ],
+                    url: [
+                        { max: 250, message: '长度不能超过 250 个字符', trigger: 'change' }
+                    ],
+                    permission_key: [
+                        { max: 100, message: '长度不能超过 50 个字符', trigger: 'change' },
+                    ],
+                    type: [
+                        { required: true, message: '此项为必填项', trigger: 'change' },
+                    ],
+                    is_show: [
+                        { required: true, message: '此项为必填项', trigger: 'change' },
+                    ]
+                },
+                menuSelect: {
+                    list: []
+                }
+            },
+            created() {
+                _this = this;
+
+                if (this.operate === 'View') {
+                    this.formDisabled = true;
+                }
+
+                if (this.operate !== 'Add') {
+                    Ajax.get({
+                        url: '/system/api/menu/getMenuList',
+                        param: {
+                            menu_id: _this.id
+                        },
+                        success(result) {
+                            if(result.IsSuccess === '1' && result.data.length > 0) {
+                                _this.formData = result.data[0];
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                }
+                this.loadMenuSelect();
+            },
+            methods: {
+                // 返回
+                onBack() {
+                    QiankunUtil.toPage(props.parentUrl + 'index.html', { backParams: params.backParams });
+                },
+                // 保存表单
+                savaForm() {
+                    this.$refs.form.validate(valid => {
+                        if (valid) {
+                            let param = this.formData;
+
+                            if (this.operate === 'Edit') {
+                                param.user_id = this.id;
+                            }
+
+                            Ajax.post({
+                                url: '/system/api/menu/updateMenu?UpdateType=' + this.operate,
+                                param: param,
+                                success(result) {
+                                    if(result.IsSuccess === '1') {
+                                        _this.$message.success('操作成功');
+                                        _this.onBack();
+                                    } else {
+                                        _this.$message.error(result.Msg);
+                                    }
+                                }
+                            });
+                        } else {
+                            this.$message.error('表单校验失败，请检查输入');
+                        }
+                    });
+                },
+                // 加载菜单
+                loadMenuSelect(searchKey) {
+                    let param = {
+                        PageNo: 1,
+                        PageCount: 10
+                    };
+
+                    if (searchKey) {
+                        param = {
+                            ...param,
+                            ...{
+                                menu_id: searchKey,
+                                menu_name: searchKey
+                            }
+                        };
+                    }
+
+                    Ajax.get({
+                        url: '/system/api/menu/getMenuList',
+                        param: param,
+                        success(result) {
+                            if (result.IsSuccess === '1') {
+                                _this.menuSelect.list = result.data;
+
+                                // 如果列表里面没有该选项
+                                if (_this.formData.parent_menu_id &&
+                                    !result.data.some(menu => menu.menu_id === _this.formData.parent_menu_id)) {
+                                    _this.menuSelect.list.push({
+                                        menu_id: _this.formData.parent_menu_id,
+                                        menu_name: _this.formData.parent_menu_name
+                                    });
+                                }
+                            }
+                        }
+                    });
+                },
+                menuSelectChange(selectedId) {
+                    this.formData.parent_menu_id = selectedId;
+                },
+                menuSelectSearch(key) {
+                    this.loadMenuSelect(key);
+                },
+                menuSelectFocus() {
+                    this.loadMenuSelect();
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-button v-if="pageParams.backMenuParams" size="small"
+        @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})"
+        style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>学生管理</b>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 350px;">
+            <a-select v-model="searchConfig.searchType" style="width: 100px;">
+                <a-select-option value="student_id">学生代码</a-select-option>
+                <a-select-option value="name">姓名</a-select-option>
+                <a-select-option value="stuNo">学号</a-select-option>
+                <a-select-option value="class">班级</a-select-option>
+            </a-select>
+            <a-select v-model="searchConfig.IsEqual" style="width: 70px;">
+                <a-select-option value="0">包含</a-select-option>
+                <a-select-option value="1">等于</a-select-option>
+            </a-select>
+            <a-input v-model="searchConfig.searchKey" placeholder="请输入搜索关键字" style="width: calc(100% - 170px);"/>
+        </a-input-group>
+        <a-button type="primary" @click="search(false)"><a-icon type="search"></a-icon> 搜索</a-button>
+        <a-button @click="search(true)"><a-icon type="sync"></a-icon> 重置</a-button>
+    </div>
+    <div class="ls-table-tool" style="width: 100%;display: flex;justify-content: space-between;">
+        <div>
+            <a-button type="primary" @click="edit(null,'Add')"><a-icon type="plus"></a-icon> 新建</a-button>
+        </div>
+    </div>
+    <a-table
+        :columns="tableColumns"
+        :data-source="tableData"
+        :pagination="tablePagination"
+        @change="handleTableChange"
+        :loading="tableLoading"
+        :row-selection="{
+            selectedRowKeys: selectedRowKeys,
+            onChange: onSelectChange,
+        }"
+        :scroll="{ x: 1200 }"
+        size="small" bordered
+    >
+        <template slot="action" slot-scope="text, record">
+            <a-button type="link" size="small" title="查看" @click="edit(record.student_id,'View')"><a-icon type="eye"></a-icon></a-button>
+            <a-button type="link" size="small" title="编辑" @click="edit(record.student_id,'Edit')"><a-icon type="edit"></a-icon></a-button>
+            <a-popconfirm title="确定删除该项？" @confirm="edit(record.student_id,'Delete')" @cancel="" ok-text="确定" cancel-text="取消">
+                <a-button type="link" size="small" title="删除" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
+            </a-popconfirm>
+        </template>
+    </a-table>
+</div>
+</body>
+<script src="./js/index.js"></script>
+</html>

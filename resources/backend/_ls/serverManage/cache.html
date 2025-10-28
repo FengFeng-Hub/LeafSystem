@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缓存监控</title>
+    <style>
+        .cache-table {
+            margin-top: 16px;
+        }
+        .value-cell {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <a-card title="缓存信息">
+        <a-button
+            type="danger"
+            size="small"
+            @click="deleteCache(1, null)"
+            v-if="$ls.hasPermission('lspk:ls:server:deleteCache')"
+            style="margin-bottom: 16px;"
+        >
+            <a-icon type="delete"></a-icon> 删除全部
+        </a-button>
+        <a-table
+            class="cache-table"
+            :columns="columns"
+            :data-source="cacheData"
+            :pagination="false"
+            size="small"
+            bordered
+        >
+            <template slot="value" slot-scope="text">
+                <div class="value-cell" :title="text">{{ text }}</div>
+            </template>
+
+            <template slot="action" slot-scope="text, record">
+                <a-button
+                    type="danger"
+                    size="small"
+                    @click="deleteCache(0, record.key)"
+                >
+                    <a-icon type="delete"></a-icon> 删除
+                </a-button>
+            </template>
+        </a-table>
+    </a-card>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+        new Vue({
+            el: '#app',
+            data: {
+                columns: [
+                    { title: '键', dataIndex: 'key', key: 'key' },
+                    { title: '值', dataIndex: 'value', key: 'value', scopedSlots: { customRender: 'value' } },
+                    { title: '操作', key: 'action', scopedSlots: { customRender: 'action' }, width: '100px' }
+                ],
+                cacheData: []
+            },
+            created() {
+                _this = this;
+                this.getCacheInfo();
+            },
+            methods: {
+                getCacheInfo() {
+                    Ajax.get({
+                        url: '/system/api/server/getCacheInfo',
+                        success: (result) => {
+                            if (result.IsSuccess === '1') {
+                                _this.cacheData = result.data.map(item => {
+                                    const key = Object.keys(item)[0];
+                                    return {
+                                        key: key,
+                                        value: item[key]
+                                    };
+                                });
+                                console.log(_this.cacheData)
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                },
+                deleteCache(isDeleteAll, key) {
+                    this.$confirm({
+                        title: '确认删除',
+                        content: isDeleteAll ? '确定要删除全部缓存吗？' : `确定要删除缓存【${key}】吗？`,
+                        okText: '确定',
+                        okType: 'danger',
+                        cancelText: '取消',
+                        onOk() {
+                            Ajax.post({
+                                url: '/system/api/server/deleteCache',
+                                param: {
+                                    IsDeleteAll: isDeleteAll,
+                                    cache_key: key
+                                },
+                                success(result) {
+                                    if (result.IsSuccess === '1') {
+                                        _this.$message.success('删除成功');
+                                        _this.getCacheInfo();
+                                    } else {
+                                        _this.$message.error(result.Msg);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

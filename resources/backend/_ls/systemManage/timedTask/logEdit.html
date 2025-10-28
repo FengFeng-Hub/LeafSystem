@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑页面</title>
+</head>
+<body>
+<div class="ls-card ls-container">
+  <div style="height: 50px;position: sticky;top: 24px;z-index: 1;">
+    <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon> 返回</a-button>
+  </div>
+  <a-form-model>
+    <a-form-model-item v-if="operate !== 'Add'" label="ID" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="id" disabled/>
+    </a-form-model-item>
+    <a-form-model-item label="定时任务代码" prop="timed_task_id" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.timed_task_id" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="任务描述" prop="task_desc" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.task_desc" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="任务分组" prop="task_group" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.task_group" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="函数路径" prop="func_path" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.func_path" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="开始时间" prop="start_time" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-date-picker
+              v-model="formData.start_time"
+              :disabled="formDisabled"
+              format="yyyy年MM月DD日 HH:mm:ss"
+              value-format="yyyy-MM-DD HH:mm:ss"
+              show-time
+              style="width: 200px;"
+      />
+    </a-form-model-item>
+    <a-form-model-item label="结束时间" prop="end_time" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-date-picker
+              v-model="formData.end_time"
+              :disabled="formDisabled"
+              format="yyyy年MM月DD日 HH:mm:ss"
+              value-format="yyyy-MM-DD HH:mm:ss"
+              show-time
+              style="width: 200px;"
+      />
+    </a-form-model-item>
+    <a-form-model-item label="耗时（毫秒）" prop="time" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-input v-model="formData.time" :disabled="formDisabled"/>
+    </a-form-model-item>
+    <a-form-model-item label="状态" prop="status" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-select v-model="formData.status" :disabled="formDisabled" style="width: 100px;">
+        <a-select-option value="1">成功</a-select-option>
+        <a-select-option value="2">失败</a-select-option>
+      </a-select>
+    </a-form-model-item>
+    <a-form-model-item label="类型" prop="type" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-select v-model="formData.type" :disabled="formDisabled" style="width: 100px;">
+        <a-select-option value="1">自动触发</a-select-option>
+        <a-select-option value="2">手动触发</a-select-option>
+      </a-select>
+    </a-form-model-item>
+    <a-form-model-item label="结果" prop="result" :label-col="{span: 3}" :wrapper-col="{span: 20}">
+      <a-textarea v-model="formData.result" :disabled="formDisabled"/>
+    </a-form-model-item>
+  </a-form-model>
+</div>
+</body>
+<script>
+  function init(props, params) {
+    let _this = null;
+
+    new Vue({
+      el: ".ls-container",
+      data: {
+        operate: params.operate,
+        id: params.id,
+        // 禁用表单
+        formDisabled: false,
+        // 表单数据
+        formData: {
+          timed_task_id: null,
+          task_desc: null,
+          task_group: null,
+          func_path: null,
+          start_time: null,
+          end_time: null,
+          time: null,
+          status: null,
+          type: null,
+          result: null,
+        }
+      },
+      created() {
+        _this = this;
+
+        this.formDisabled = true;
+
+        Ajax.get({
+          url: '/api/sysTimedTaskLog/getSysTimedTaskLogList',
+          param: {
+            timed_task_log_id: _this.id
+          },
+          success(result) {
+            if(result.IsSuccess === '1' && result.data.length > 0) {
+              _this.formData = result.data[0];
+            } else {
+              _this.$message.error(result.Msg);
+            }
+          }
+        });
+      },
+      methods: {
+        // 返回
+        onBack() {
+          QiankunUtil.toPage(props.parentUrl + 'log.html', {backParams: params.backParams});
+        },
+      }
+    });
+  }
+
+  // 获取qiankun子应用生命周期
+  QiankunUtil.getLifecycles({
+    mount(props) {
+      init(props, props.params);
+    }
+  });
+</script>
+</html>

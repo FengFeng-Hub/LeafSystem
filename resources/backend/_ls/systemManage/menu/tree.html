@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        .ls-main-content > *:first-child {
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-container" style="height: 100%;">
+<a-layout>
+<a-layout-header class="ls-card" style="padding: 0 24px;">
+    <a-button v-if="pageParams.backMenu" size="small" @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {
+		...{menu_name: '菜单管理'}, ...pageParams.backMenu
+	})" style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>菜单树</b>
+</a-layout-header>
+<a-layout>
+    <a-layout-sider width="400" class="ls-card" style="margin-right: 10px;height: calc(100% - 25px);">
+        <a-button size="small" @click="expandAll(false)">展开全部</a-button>
+        <a-button size="small" @click="expandAll(true)">展开全部目录</a-button>
+        <a-button size="small" @click="collapseAll">折叠全部</a-button>
+        <a-button type="primary" size="small" @click="handleMenuTreeAdd()"><a-icon type="plus"></a-icon> 添加</a-button>
+        <a-divider></a-divider>
+        <a-tree
+            show-icon
+            :tree-data="menuTree.data"
+            :expanded-keys="menuTree.expandedKeys"
+            :replace-fields="{ title: 'menu_name', key: 'menu_id', children: 'children' }"
+            @expand="handleMenuTreeExpand"
+            draggable
+            @dragenter="onDragEnter"
+            @drop="onDrop"
+            style="height: calc(100% - 60px);overflow: auto;"
+        >
+            <a-icon type="appstore" theme="twoTone" two-tone-color="orange" slot="appstore"></a-icon>
+            <a-icon type="file" theme="twoTone" two-tone-color="#1890ff" slot="file"></a-icon>
+            <a-icon type="file" theme="twoTone" two-tone-color="blue" slot="iframe"></a-icon>
+            <a-icon type="link" slot="link" style="color: blue;"></a-icon>
+            <a-icon type="check-square" theme="twoTone" two-tone-color="green" slot="check-square"></a-icon>
+            <template #title="node">
+                <span @click="handleMenuTreeSelect(node)" @contextmenu="menuTree.visibleDropdownMenuId = node.menu_id">
+                    {{node.menu_name}}</span>
+                <!-- 右键菜单 -->
+                <a-dropdown :visible="node.menu_id === menuTree.visibleDropdownMenuId">
+                    <span></span>
+                    <template #overlay>
+                        <a-menu class="menu-tree-contextmenu">
+                            <a-menu-item key="1" @click="handleMenuTreeAdd(node)">添加</a-menu-item>
+                            <a-menu-item key="2" @click="handleMenuTreeDelete(node)">删除</a-menu-item>
+                        </a-menu>
+                    </template>
+                </a-dropdown>
+            </template>
+        </a-tree>
+    </a-layout-sider>
+    <a-layout-content class="ls-card">
+        <a-form-model :model="formData" :rules="formDataRules" ref="form">
+            <a-form-model-item style="">
+                <b v-if="id && id !== ''">编辑</b>
+                <b v-else>添加</b>
+                <a-divider></a-divider>
+            </a-form-model-item>
+            <a-form-model-item v-if="id && id !== ''" label="ID" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-input v-model="id" disabled/>
+            </a-form-model-item>
+            <a-form-model-item label="菜单名称" prop="menu_name" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-input v-model="formData.menu_name"/>
+            </a-form-model-item>
+            <a-form-model-item label="父级菜单代码" prop="parent_menu_id" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-select
+                    show-search
+                    allow-clear
+                    v-model="formData.parent_menu_id"
+                    placeholder="选择父级菜单"
+                    @change="menuSelectChange"
+                    @search="menuSelectSearch"
+                    @focus="menuSelectFocus"
+                    :filter-option="false"
+                >
+                    <a-select-option v-for="item in menuSelect.list" :key="item.menu_id" :value="item.menu_id">
+                        {{item.menu_id}} - {{item.menu_name}}
+                    </a-select-option>
+                </a-select>
+<!--                <a-select-->
+<!--                    show-search-->
+<!--                    allow-clear-->
+<!--                    v-model="formData.parent_menu_id"-->
+<!--                    placeholder="选择父级菜单"-->
+<!--                >-->
+<!--                    <a-select-option v-for="item in menuTree.data" :key="item.menu_id" :value="item.menu_id">-->
+<!--                        {{item.menu_id}} - {{item.menu_name}}-->
+<!--                    </a-select-option>-->
+<!--                </a-select>-->
+            </a-form-model-item>
+            <a-form-model-item label="菜单图标" prop="menu_icon" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-input v-model="formData.menu_icon"/>
+            </a-form-model-item>
+            <a-form-model-item label="url" prop="url" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-input v-model="formData.url"/>
+            </a-form-model-item>
+            <a-form-model-item label="类型" prop="type" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-select v-model="formData.type">
+                    <a-select-option value="1">菜单目录</a-select-option>
+                    <a-select-option value="2">菜单项</a-select-option>
+                    <a-select-option value="3">iframe</a-select-option>
+                    <a-select-option value="4">此页面</a-select-option>
+                    <a-select-option value="5">新页面</a-select-option>
+                    <a-select-option value="6">控件</a-select-option>
+                </a-select>
+            </a-form-model-item>
+            <a-form-model-item label="权限键" prop="permission_key" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-input v-model="formData.permission_key"/>
+            </a-form-model-item>
+            <a-form-model-item label="是否显示" prop="is_show" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-switch :checked="formData.is_show === '1'" @change="formData.is_show = formData.is_show === '1'?'0':'1'"/>
+            </a-form-model-item>
+            <a-form-model-item v-if="id && id !== ''" label="排序" :label-col="{span: 5}" :wrapper-col="{span: 18}">
+                <a-input v-model="formData.sort" disabled/>
+            </a-form-model-item>
+            <a-form-model-item style="text-align: center;">
+                <a-button type="primary" @click="edit"><a-icon type="save"></a-icon> 保存</a-button>
+            </a-form-model-item>
+        </a-form-model>
+    </a-layout-content>
+</a-layout>
+</a-layout>
+</div>
+</body>
+<script src="./js/tree.js"></script>
+</html>

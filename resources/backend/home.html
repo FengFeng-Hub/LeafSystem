@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘</title>
+    <style>
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 768px) {
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="ls-container">
+    <div class="ls-card">
+        <b>工作台</b>
+        <a-divider></a-divider>
+        <a-avatar size="large" :src="$ls.backendUser.showAvatar"></a-avatar>
+        <span style="font-size: 16px;">{{getCurrentTime()}}！{{$ls.backendUser.name}}</span>
+        <span style="margin-left: 10px;color: gray;">
+			<template v-for="item,index in $ls.backendUser.role_list">
+				{{index == 0?item.role_name:'| ' + item.role_name}}
+			</template>
+		</template>
+        </span>
+    </div>
+    <div class="dashboard-cards">
+        <div class="ls-card" style="text-align: center;">
+            <h3>总销售额</h3>
+            <h2 style="margin: 16px 0; color: #1890ff;">¥ 126,560</h2>
+            <div style="color: rgba(0, 0, 0, 0.45);">周同比 12% <a-icon type="caret-up" style="color: #f5222d;"></a-icon></div>
+        </div>
+        <div class="ls-card" style="text-align: center;">
+            <h3>访问量</h3>
+            <h2 style="margin: 16px 0; color: #1890ff;">8,846</h2>
+            <div style="color: rgba(0, 0, 0, 0.45);">日访问量 1,234</div>
+        </div>
+        <div class="ls-card" style="text-align: center;">
+            <h3>支付笔数</h3>
+            <h2 style="margin: 16px 0; color: #1890ff;">6,560</h2>
+            <div style="color: rgba(0, 0, 0, 0.45);">转化率 60%</div>
+        </div>
+        <div class="ls-card" style="text-align: center;">
+            <h3>运营活动效果</h3>
+            <h2 style="margin: 16px 0; color: #1890ff;">78%</h2>
+            <div style="color: rgba(0, 0, 0, 0.45);">周同比 12% <a-icon type="caret-up" style="color: #52c41a;"></a-icon></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-bottom: 24px;">销售额趋势</h2>
+        <div style="height: 300px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+            [这里是图表区域 - 实际项目中可以使用ECharts等库]
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null,viewer = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+            },
+            created() {
+                _this = this;
+            },
+            methods: {
+                getCurrentTime() {
+                    let hour = new Date().getHours();
+
+                    if(hour < 11) {
+                        return '早上好';
+                    } else if(hour < 14) {
+                        return '上午好';
+                    }  else if(hour < 18) {
+                        return '下午好';
+                    } else {
+                        return '晚上好';
+                    }
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-button v-if="pageParams.backMenuParams" size="small"
+              @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})"
+              style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>配置管理</b>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 400px;">
+            <a-select v-model="searchConfig.searchType" style="width: 130px;">
+                <a-select-option value="config_id">ID</a-select-option>
+                <a-select-option value="config_key">配置键</a-select-option>
+                <a-select-option value="config_value">配置值</a-select-option>
+                <a-select-option value="config_desc">配置描述</a-select-option>
+            </a-select>
+            <a-select v-model="searchConfig.IsEqual" style="width: 70px;">
+                <a-select-option value="0">包含</a-select-option>
+                <a-select-option value="1">等于</a-select-option>
+            </a-select>
+            <a-input v-model="searchConfig.searchKey" placeholder="请输入搜索关键字" style="width: calc(100% - 200px);"/>
+        </a-input-group>
+        <a-button type="primary" @click="search(false)"><a-icon type="search"></a-icon> 搜索</a-button>
+        <a-button @click="search(true)"><a-icon type="sync"></a-icon> 重置</a-button>
+    </div>
+    <div class="ls-table-tool" style="width: 100%;display: flex;justify-content: space-between;">
+        <div>
+            <a-button type="primary" @click="edit(null,'Add')" v-if="$ls.hasPermission('lspk:ls:systemConfig:add')"><a-icon type="plus"></a-icon> 新建</a-button>
+        </div>
+    </div>
+    <a-table
+        :columns="tableColumns"
+        :data-source="tableData"
+        :pagination="tablePagination"
+        @change="handleTableChange"
+        :loading="tableLoading"
+        :row-selection="{
+            selectedRowKeys: selectedRowKeys,
+            onChange: onSelectChange,
+        }"
+        :scroll="{ x: 1620 }"
+        size="small" bordered
+    >
+        <template slot="action" slot-scope="text, record">
+            <a-button type="link" size="small" title="查看" @click="edit(record.config_id,'View')"><a-icon type="eye"></a-icon></a-button>
+            <a-button type="link" size="small" title="编辑" @click="edit(record.config_id,'Edit')" v-if="$ls.hasPermission('lspk:ls:systemConfig:edit')"><a-icon type="edit"></a-icon></a-button>
+            <a-popconfirm title="确定删除该项？" v-if="$ls.hasPermission('lspk:ls:systemConfig:delete')" @confirm="edit(record.config_id,'Delete')" @cancel="" ok-text="确定" cancel-text="取消">
+                <a-button type="link" size="small" title="删除" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
+            </a-popconfirm>
+        </template>
+        <template slot="config_value" slot-scope="text, record">
+            <a-tooltip
+                v-if="record.config_type === '1' | record.config_type === '5' || record.config_type === '6'"
+                :title="text"
+            >
+                <div style="width: 100%;white-space: nowrap;text-overflow: ellipsis;overflow: hidden;cursor: pointer;">{{text}}</div>
+            </a-tooltip>
+            <img v-else-if="record.config_type === '2' && text && text !== ''" :src="text" width="50">
+            <a v-else-if="record.config_type === '3'" :href="text" download>{{$ls.file.getNameByUrl(text)}}</a>
+            <template v-if="record.config_type === '4'">
+                <a-tag v-if="text === '1'" color="blue">是</a-tag>
+                <a-tag v-else color="gray">否</a-tag>
+            </template>
+        </template>
+        <a-tooltip
+            slot="config_desc" slot-scope="text, record"
+            :title="text"
+        >
+            <div style="width: 100%;white-space: nowrap;text-overflow: ellipsis;overflow: hidden;cursor: pointer;">{{text}}</div>
+        </a-tooltip>
+        <template slot="config_type" slot-scope="text, record">
+            <a-tag v-if="text === '1'" color="blue">文本</a-tag>
+            <a-tag v-else-if="text === '2'" color="cyan">图片</a-tag>
+            <a-tag v-else-if="text === '3'" color="green">文件</a-tag>
+            <a-tag v-else-if="text === '4'" color="purple">开关</a-tag>
+            <a-tag v-else-if="text === '5'" color="pink">日期</a-tag>
+            <a-tag v-else-if="text === '6'" color="red">日期时间</a-tag>
+        </template>
+        <template slot="access_level" slot-scope="text, record">
+            <a-tag v-if="text === '1'" color="red">不可访问</a-tag>
+            <a-tag v-else-if="text === '2'" color="pink">后台用户</a-tag>
+            <a-tag v-else-if="text === '3'" color="blue">前台用户</a-tag>
+            <a-tag v-else-if="text === '4'" color="green">公开</a-tag>
+        </template>
+    </a-table>
+</div>
+</body>
+<script src="./js/index.js"></script>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaf 后台管理系统</title>
+    <link rel="stylesheet" href="/lib/ant-design-vue/antd.min.css">
+    <link rel="stylesheet" href="/lib/leaf-system/leaf-system.css">
+    <!-- 图标 -->
+    <link rel="stylesheet" href="/lib/_icon/materialdesignicons/css/materialdesignicons.min.css">
+    <!-- 图片预览插件 -->
+    <link rel="stylesheet" href="/lib/viewer/viewer.min.css">
+    <!-- markdown -->
+    <link rel="stylesheet" href="/lib/editormd/css/editormd.min.css">
+    <!-- 代码高亮 -->
+    <link rel="stylesheet" href="/lib/highlight_11.7.0/highlight.min.css">
+</head>
+<body>
+<!-- 后台主容器 -->
+<div id="ls-main-app">
+    <a-layout>
+        <!-- 侧边栏 -->
+        <a-layout-sider
+            :theme="menuTheme"
+            :trigger="null"
+            collapsible
+            v-model="collapsed"
+            width="250"
+            style="border-right: 1px solid #e8e8e8;"
+        >
+            <div class="ls-main-logo" :theme="menuTheme" :style="{borderBottom: menuTheme == 'light'?'1px solid #e8e8e8':'none'}">
+                <span class="mdi mdi-leaf" style="color: green;"></span>
+                <span v-if="!collapsed" style="margin-left: 10px;">Leaf后台管理系统</span>
+            </div>
+            <a-menu
+                :theme="menuTheme"
+                mode="inline"
+                :open-keys="openKeys"
+                :selectedKeys="selectedKeys"
+                v-model="selectedKeys"
+                @click="handleMenuClick"
+                :inlineCollapsed="collapsed"
+                v-on:open-change="onOpenChange"
+                class="ls-main-menu"
+            >
+                <template v-for="item in menuTreeData">
+                    <lf-menu-item :item="item" :key="item.menu_id"/>
+                </template>
+            </a-menu>
+        </a-layout-sider>
+        <!-- 主内容区 -->
+        <a-layout>
+            <!-- 顶部导航 -->
+            <a-layout-header class="ls-main-header">
+                <div>
+                    <a-icon class="trigger" :type="collapsed ? 'menu-unfold' : 'menu-fold'" @click="collapsed = !collapsed" style="font-size: 18px; cursor: pointer;"></a-icon>
+                    <a-icon type="reload" @click="handleRefresh" title="刷新" style="margin-left: 24px; font-size: 18px; cursor: pointer;"></a-icon>
+                    <a-icon type="fullscreen" @click="containerFullscreen()" title="全屏" style="margin-left: 24px; font-size: 18px; cursor: pointer;"></a-icon>
+                </div>
+                <div class="ls-main-header-right">
+                    <a-icon type="bell" class="ls-main-header-action"></a-icon>
+                    <a-icon type="mail" class="ls-main-header-action"></a-icon>
+                    <a-dropdown>
+                        <div class="ls-main-user-avatar">
+                            <a-avatar :src="$ls.backendUser.showAvatar"></a-avatar>
+                            <span v-if="!collapsed" style="margin-left: 5px;">{{$ls.backendUser.name}}</span>
+                        </div>
+                        <a-menu slot="overlay">
+                            <a-menu-item @click="toPage('71')"><a-icon type="user"></a-icon> 个人中心</a-menu-item>
+                            <a-menu-item><a-icon type="setting"></a-icon> 设置</a-menu-item>
+                            <a-menu-divider></a-menu-divider>
+                            <a-menu-item @click="handleLogout"><a-icon type="logout"></a-icon> 退出登录</a-menu-item>
+                        </a-menu>
+                    </a-dropdown>
+                    <a-icon type="setting" @click="isShowDrawer = true"></a-icon>
+                </div>
+            </a-layout-header>
+            <!-- 多页签 -->
+            <div v-if="enableMultiTab" class="ls-multi-tab-container" @contextmenu.prevent>
+                <a-button class="scroll-btn" @click="tabScroll('left')" style="float: left;"><a-icon type="double-left"></a-icon></a-button>
+                <!-- 滚动容器 -->
+                <div class="tab-scroll-container">
+                    <div class="tab-wrapper">
+                        <div
+                                v-for="(tab, index) in tabList"
+                                :key="tab.key"
+                                :class="['tab-item', { active: activeTabKey === tab.key }]"
+                                @click="toPage(tab.key)"
+                                @contextmenu.prevent="openTabContextmenu($event, tab.key)"
+                        >
+                            <span>{{ tab.title }}</span>
+                                <a-icon type="close" v-if="tabList.length > 1" @click.stop="closeTab(tab.key)" style="fontSize: 12px;"></a-icon>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <a-button class="scroll-btn" @click="tabScroll('right')" style="float: right;"><a-icon type="double-right"></a-icon></a-button>
+            </div>
+
+            <!-- 右键菜单 -->
+            <div v-if="showTabContextmenu" class="ls-multi-tab-contextmenu" :style="tabContextmenuPosition" @click="closeTabContextmenu">
+                <div class="contextmenu-item" @click="closeTab(activeContextmenuTabKey)">
+                    <a-icon type="close"></a-icon>
+                    <span>关闭当前</span>
+                </div>
+                <div class="contextmenu-item" @click="closeTab(activeContextmenuTabKey, 'other')">
+                    <a-icon type="delete"></a-icon>
+                    <span>关闭其他</span>
+                </div>
+                <div class="contextmenu-item" @click="closeTab(activeContextmenuTabKey, 'left')">
+                    <a-icon type="arrow-left"></a-icon>
+                    <span>关闭左侧</span>
+                </div>
+                <div class="contextmenu-item" @click="closeTab(activeContextmenuTabKey, 'right')">
+                    <a-icon type="arrow-right"></a-icon>
+                    <span>关闭右侧</span>
+                </div>
+                <div class="contextmenu-item" @click="closeTab(tabList[0].key, 'other')" style="border-bottom: 1px solid #e8e8e8;">
+                    <a-icon type="close-square"></a-icon>
+                    <span>关闭全部</span>
+                </div>
+                <div class="contextmenu-item" @click="containerFullscreen(activeContextmenuTabKey)">
+                    <a-icon type="fullscreen"></a-icon>
+                    <span>全屏</span>
+                </div>
+            </div>
+            <!-- 面包屑导航 -->
+            <div class="ls-main-breadcrumb">
+                <template v-for="(item, index) in breadcrumb"><span class="ls-main-breadcrumb-item" :key="index">{{item}}</span></template>
+            </div>
+            <a-spin v-if="isShowLoadIcon" style="margin-top: 200px;width: 100%;"></a-spin>
+            <!-- 内容区 -->
+            <iframe v-if="currentMenu.type == 3" id="ls-main-container-iframe" :src="currentMenu.url" scrolling="yes" style="padding: 0 24px 0 24px;width: calc(100% - 5px);height: calc(100% - 5px);border: none;"></iframe>
+            <a-layout-content v-else ref="lsMainContainer" id="ls-main-container" class="ls-main-content" :class="isHeaderFixed?'ls-main-header-fixed-content':''"></a-layout-content>
+        </a-layout>
+    </a-layout>
+    <!-- 设置抽屉 -->
+    <a-drawer
+        title="系统设置"
+        placement="right"
+        :closable="true"
+        :visible="isShowDrawer"
+        @close="isShowDrawer = false"
+        width="300"
+    >
+        <a-divider>菜单设置</a-divider>
+        <a-radio-group v-model="menuTheme" style="width: 100%;">
+            <a-radio-button value="dark" style="width: 50%; text-align: center;">侧边栏暗色</a-radio-button>
+            <a-radio-button value="light" style="width: 50%; text-align: center;">侧边栏亮色</a-radio-button>
+        </a-radio-group>
+        <a-divider>其他设置</a-divider>
+        <div style="margin-bottom: 16px;">
+            <a-switch v-model="isHeaderFixed"></a-switch> 固定头部<br><br>
+            <a-switch v-model="enableMultiTab"></a-switch> 启动多页签
+        </div>
+    </a-drawer>
+</div>
+</body>
+<!-- 主页面依赖 -->
+<!--<script src="/lib/jquery-3.1.0.min.js"></script>-->
+<!--<script src="/lib/vue/vue.min.js"></script>-->
+<!--<script src="/lib/ant-design-vue/antd.js"></script>-->
+<script src="/lib/leaf-system/antd1.7.8.all.min.js"></script>
+<!-- 浏览器方式下有些事件无法响应，需要引入vue-dash-event插件 -->
+<script src="/lib/vue/vue-dash-event.js"></script>
+<script src="/lib/qiankun/index.umd.min.js"></script>
+<script src="/lib/leaf-common/leaf-common.js"></script>
+<!-- 表格拖拽排序 -->
+<script src="/lib/Sortable.min.js"></script>
+<!-- 图片预览 -->
+<script src="/lib/viewer/viewer.min.js"></script>
+<!-- 图表 -->
+<script src="/lib/echarts.min.js"></script>
+<!-- 富文本 -->
+<!--<script src="/lib/ckeditor.js"></script>-->
+<!-- markdown -->
+<!--<script src="/lib/editormd/editormd.min.js"></script>-->
+<script src="/lib/editormd/lib/marked.min.js"></script>
+<!-- 代码高亮 -->
+<script src="/lib/highlight_11.7.0/highlight.all.js"></script>
+<!-- 子页面依赖 -->
+
+<script src="/lib/leaf-system/leaf-system-common.js"></script>
+<script>
+    createLeafSystemApp();
+</script>
+</html>

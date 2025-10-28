@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-button v-if="pageParams.backMenuParams" size="small"
+              @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})"
+              style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>定时任务管理</b>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 400px;">
+            <a-select v-model="searchConfig.searchType" style="width: 130px;">
+                <a-select-option value="timed_task_id">ID</a-select-option>
+                <a-select-option value="task_desc">任务描述</a-select-option>
+                <a-select-option value="task_group">任务分组</a-select-option>
+                <a-select-option value="func_path">函数路径</a-select-option>
+                <a-select-option value="cron_expression">Cron表达式</a-select-option>
+            </a-select>
+            <a-select v-model="searchConfig.IsEqual" style="width: 70px;">
+                <a-select-option value="0">包含</a-select-option>
+                <a-select-option value="1">等于</a-select-option>
+            </a-select>
+            <a-input v-model="searchConfig.searchKey" placeholder="请输入搜索关键字" style="width: calc(100% - 200px);"/>
+        </a-input-group>
+        <a-input-group compact style="width: 130px;">
+            <div class="ls-control-tag">状态</div>
+            <a-select v-model="searchConfig.model.status" style="width: calc(100% - 52px);">
+                <a-select-option value="">所有</a-select-option>
+                <a-select-option value="1">启动</a-select-option>
+                <a-select-option value="2">暂停</a-select-option>
+                <a-select-option value="3">终止</a-select-option>
+            </a-select>
+        </a-input-group>
+        <a-button type="primary" @click="search(false)"><a-icon type="search"></a-icon> 搜索</a-button>
+        <a-button @click="search(true)"><a-icon type="sync"></a-icon> 重置</a-button>
+    </div>
+    <div class="ls-table-tool" style="width: 100%;display: flex;justify-content: space-between;">
+        <div>
+            <a-button type="primary" @click="edit(null,'Add')" v-if="$ls.hasPermission('lspk:ls:timedTask:add')"><a-icon type="plus"></a-icon> 新建</a-button>
+        </div>
+    </div>
+    <a-table
+            :columns="tableColumns"
+            :data-source="tableData"
+            :pagination="tablePagination"
+            @change="handleTableChange"
+            :loading="tableLoading"
+            :scroll="{ x: 1790 }"
+            size="small" bordered
+    >
+        <template slot="action" slot-scope="text, record">
+            <a-button type="link" size="small" title="查看" @click="edit(record.timed_task_id,'View')"><a-icon type="eye"></a-icon></a-button>
+            <a-button type="link" size="small" title="编辑" @click="edit(record.timed_task_id,'Edit')" v-if="$ls.hasPermission('lspk:ls:timedTask:edit')"><a-icon type="edit"></a-icon></a-button>
+            <a-popconfirm title="确定删除该项？" v-if="$ls.hasPermission('lspk:ls:timedTask:delete')" @confirm="edit(record.timed_task_id,'Delete')" @cancel="" ok-text="确定" cancel-text="取消">
+                <a-button type="link" size="small" title="删除" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
+            </a-popconfirm>
+        </template>
+        <template slot="action2" slot-scope="text, record">
+            <a-button type="link" size="small" title="执行" @click="operate(record, 'Execute')" v-if="$ls.hasPermission('lspk:ls:timedTask:execute')" style="padding: 0;">[执行]</a-button>
+            <a-button v-if="record.status != '1' && record.status != '2'" type="link" size="small" @click="operate(record, 'Start')" v-if="$ls.hasPermission('lspk:ls:timedTask:start')" style="padding: 0;color: green;">[启动]</a-button>
+            <a-button v-if="record.status != '1' && record.status != '3'" type="link" size="small" @click="operate(record, 'Start')" v-if="$ls.hasPermission('lspk:ls:timedTask:start')" style="padding: 0;">[恢复]</a-button>
+            <a-button v-if="record.status != '2' && record.status != '3'" type="link" size="small" @click="operate(record, 'Pause')" v-if="$ls.hasPermission('lspk:ls:timedTask:pause')" style="padding: 0;">[暂停]</a-button>
+            <a-button v-if="record.status != '3'" type="link" size="small" @click="operate(record, 'Stop')" v-if="$ls.hasPermission('lspk:ls:timedTask:stop')" style="padding: 0;color: red;">[终止]</a-button>
+<!--            <a-button type="link" size="small" @click="operate(record, 'Start')" style="padding: 0;color: green;">[启动/恢复]</a-button>-->
+<!--            <a-button type="link" size="small" @click="operate(record, 'Pause')" style="padding: 0;">[暂停]</a-button>-->
+<!--            <a-button type="link" size="small" @click="operate(record, 'Stop')" style="padding: 0;color: red;">[终止]</a-button>-->
+        </template>
+        <template slot="status" slot-scope="text">
+            <a-tag v-if="text == '1'" color="blue">启动</a-tag>
+            <a-tag v-else-if="text == '2'" color="gray">暂停</a-tag>
+            <a-tag v-else color="red">终止</a-tag>
+        </template>
+        <template slot="misfire_policy" slot-scope="text">
+            <a-tag v-if="text == '1'" color="gray">默认</a-tag>
+            <a-tag v-else-if="text == '2'" color="green">立即执行</a-tag>
+            <a-tag v-else-if="text == '3'" color="blue">执行一次</a-tag>
+            <a-tag v-else-if="text == '4'" color="red">放弃执行</a-tag>
+            <a-tag v-else color="gray">未知</a-tag>
+        </template>
+        <template slot="concurrent_execute" slot-scope="text">
+            <a-tag v-if="text == '1'">是</a-tag>
+            <a-tag v-else color="gray">否</a-tag>
+        </template>
+        <template slot="is_log" slot-scope="text">
+            <a-tag v-if="text == '1'">是</a-tag>
+            <a-tag v-else color="gray">否</a-tag>
+        </template>
+    </a-table>
+</div>
+</body>
+<script src="./js/index.js"></script>
+</html>

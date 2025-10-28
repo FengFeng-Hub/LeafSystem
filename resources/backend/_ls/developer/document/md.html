@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>md文件查看器</title>
+    <style>
+        .ls-main-content > *:first-child {
+            height: 100%;
+        }
+        .toc-item {
+            padding: 5px 0;
+            cursor: pointer;
+            color: #333;
+        }
+        .toc-item:hover {
+            color: #1890ff;
+        }
+        .toc-item.active {
+            color: #1890ff;
+            font-weight: bold;
+        }
+        .toc-h2 {
+            padding-left: 10px;
+        }
+        .toc-h3 {
+            padding-left: 20px;
+        }
+        .toc-h4 {
+            padding-left: 40px;
+        }
+        .toc-h5 {
+            padding-left: 40px;
+        }
+        .toc-h6 {
+            padding-left: 50px;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-container" style="height: 100%;">
+    <a-layout>
+        <a-layout-sider width="300" style="padding: 24px;height: 100%;background-color: white;overflow-y: auto;">
+            <div
+                v-for="item in toc"
+                :key="item.id"
+                :class="['toc-item', `toc-h${item.level}`, { active: activeId === item.id }]"
+                @click="scrollTo(item.id)"
+            >{{item.text}}</div>
+        </a-layout-sider>
+        <a-layout style="height: 100%;">
+            <a-layout-content>
+                <div
+                    v-html="markdownContent"
+                    ref="contentContainer"
+                    @scroll="handleContentScroll"
+                    class="markdown-body"
+                    style="padding: 24px;height: 100%;background-color: white;overflow-y: auto;"></div>
+            </a-layout-content>
+        </a-layout>
+    </a-layout>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+        new Vue({
+            el: '.ls-container',
+            data: {
+                markdownContent: '',
+                toc: [],
+                activeId: '',
+                scrollLock: false
+            },
+            created() {
+                _this = this;
+                // 获取 URL 参数中的 markdown 文件路径
+                const markdownUrl = '/backend/_ls/developer/document/file/' + props.urlParams.get("name") + '.md';
+
+                fetch(markdownUrl)
+                    .then(res => res.text())
+                    .then(data => {
+                        this.parseMarkdown(data);
+                    })
+                    .catch(err => {
+                        console.error("加载 Markdown 文件失败：", err);
+                    });
+            },
+            methods: {
+                // 解析 Markdown 文件并生成目录
+                parseMarkdown(markdown) {
+                    // 重写标题渲染方法
+                    // 生成目录（TOC）
+                    const tocList = [];
+                    const renderer = new marked.Renderer();
+                    let count = 0;
+                    renderer.heading = (text, level) => {
+                        const anchor = text.toLowerCase().replace(/[^\w]+/g, '-');
+                        const id = 'markdown-toc-id-' + count;
+                        tocList.push({ level, text, anchor, id });
+                        count++;
+                        return `<h${level} id="${id}">${text}</h${level}>`;
+                    };
+
+                    marked.setOptions({renderer});
+
+                    this.toc = tocList;
+                    this.markdownContent = marked(markdown, { renderer });
+                },
+                scrollTo(id) {
+                    this.scrollLock = true;
+                    this.activeId = id;
+                    const element = document.getElementById(id);
+                    if (element) {
+                        let top = element.offsetTop - 180;
+
+                        if (top < 0) {
+                            top = 0;
+                        }
+
+                        this.$refs.contentContainer.scrollTo({
+                            top: top,
+                            behavior: 'smooth'
+                        });
+                    }
+                    setTimeout(() => {
+                        this.scrollLock = false;
+                    }, 1000);
+                },
+                handleContentScroll() {
+                    if (this.scrollLock) return;
+
+                    const container = this.$refs.contentContainer;
+                    const scrollTop = container.scrollTop;
+                    const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+
+                    let activeHeading = null;
+                    for (let i = headings.length - 1; i >= 0; i--) {
+                        if (headings[i].offsetTop - 180 <= scrollTop) {
+                            activeHeading = headings[i];
+                            break;
+                        }
+                    }
+
+                    if (activeHeading) {
+                        this.activeId = activeHeading.id;
+                    }
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

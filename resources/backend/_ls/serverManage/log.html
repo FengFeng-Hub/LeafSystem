@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>系统日志</title>
+    <link rel="stylesheet" href="/lib/ant-design-vue/antd.min.css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        #app {
+            height: 100%;
+            padding: 16px;
+        }
+        .ant-card-body {
+            height: calc(100% - 60px);
+        }
+        .log-container {
+            height: 100%;
+            display: flex;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+        }
+        .log-tree {
+            width: 300px;
+            border-right: 1px dashed #999;
+            padding: 16px;
+            overflow: auto;
+        }
+        .log-content {
+            flex: 1;
+            padding: 16px;
+            overflow: hidden;
+        }
+        .log-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fafafa;
+        }
+        .tree-actions {
+            margin-bottom: 12px;
+        }
+        .ant-tree-node-content-wrapper {
+            width: calc(100% - 24px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <a-card :bordered="false" style="height: 100%;">
+        <template slot="title"><h3 style="margin: 0;">系统日志</h3></template>
+        <div class="log-container">
+            <div class="log-tree">
+                <div class="tree-actions">
+                    <a-button-group>
+                        <a-button @click="expandAll">全部展开</a-button>
+                        <a-button @click="collapseAll">全部折叠</a-button>
+                    </a-button-group>
+                    <a-button @click="loadLogData(true)"><a-icon type="reload"></a-icon></a-button>
+                </div>
+                <a-tree
+                    v-if="treeData.length > 0"
+                    :tree-data="treeData"
+                    :replace-fields="{ children: 'children', title: 'name', key: 'key' }"
+                    :expanded-keys="expandedKeys"
+                    @expand="onExpand"
+                    @select="handleTreeSelect"
+                >
+                    <template slot="title" slot-scope="{ name, type, log_url }">
+                        <span :title="name">{{ name }}</span>
+                        <span v-if="type === 'file'" style="float: right; margin-right: 20px;">
+                            <a-dropdown :trigger="['click']">
+                                <a-icon type="ellipsis"></a-icon>
+                                <a-menu slot="overlay">
+                                    <a-menu-item @click="handleRename(log_url, name)" :disabled="!$ls.hasPermission('lspk:ls:log:rename')">重命名</a-menu-item>
+                                    <a-menu-item @click="handleDelete(log_url, name)" :disabled="!$ls.hasPermission('lspk:ls:log:delete')">删除</a-menu-item>
+                                </a-menu>
+                            </a-dropdown>
+                        </span>
+                    </template>
+                </a-tree>
+                <a-spin v-else style="width: 100%; text-align: center;" />
+            </div>
+            <div class="log-content">
+                <iframe
+                    id="log-iframe"
+                    class="log-iframe"
+                    :src="currentLogUrl"
+                    frameborder="none"
+                ></iframe>
+            </div>
+        </div>
+    </a-card>
+    <!-- 重命名模态框 -->
+    <a-modal
+        v-model="renameModalVisible"
+        title="重命名日志文件"
+        @ok="handleRenameConfirm"
+        @cancel="renameModalVisible = false"
+    >
+        <a-input v-model="newFileName" :placeholder="`请输入新文件名`" />
+    </a-modal>
+</div>
+<script src="/lib/leaf-system/antd1.7.8.all.min.js"></script>
+<script src="/lib/vue/vue-dash-event.js"></script>
+<script src="/lib/leaf-common/leaf-common.min.js"></script>
+<script src="/lib/leaf-system/leaf-system-common.js"></script>
+<script>
+    // 注册 Ant Design Vue 组件
+    Vue.use(antd);
+    let _this = null;
+
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                treeData: [],
+                expandedKeys: [],
+                currentLogUrl: '',
+                renameModalVisible: false,
+                newFileName: '',
+                currentRenameUrl: '',
+                // 树节点key
+                nodeKey: 0
+            };
+        },
+        beforeCreate() {
+            // 获取权限键列表
+            Ajax.get({
+                url: '/system/api/role/getRoleMenuPermissionKeyList',
+                success(result) {
+                    if(result.IsSuccess === '1') {
+                        permissionKeyList = result.data.map(item => {
+                            return item.permission_key;
+                        });
+
+                    } else {
+                        _this.message.error('初始化错误');
+                    }
+                }
+            });
+        },
+        created() {
+            _this = this;
+            this.loadLogData(true);
+        },
+        mounted() {
+            // 监听iframe加载完成事件
+            document.getElementById('log-iframe').onload = () => {
+                try {
+                    const iframe = document.getElementById('log-iframe');
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    iframeDoc.documentElement.scrollTop = iframeDoc.documentElement.scrollHeight;
+                } catch (e) {
+                    console.log("无法访问iframe内容:", e);
+                }
+            };
+        },
+        methods: {
+            loadLogData(isExpandedFirst) {
+                // 这里替换为你的Ajax请求
+                // 模拟数据，实际使用时请替换为真实API调用
+                fetch('/system/api/log/getLog')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.IsSuccess === '1') {
+                            this.treeData = this.formatTreeData(data.data);
+                            if (isExpandedFirst) {
+                                // 默认展开第一级目录
+                                this.expandedKeys = this.treeData
+                                    .filter(node => node.type === 'dir')
+                                    .map(node => node.key);
+                            }
+                        } else {
+                            this.$message.error(data.Msg);
+                        }
+                    })
+                    .catch(error => {
+                        this.$message.error('加载日志数据失败: ' + error.message);
+                    });
+            },
+            formatTreeData(nodes) {
+                return nodes.map(node => {
+                    this.nodeKey += 1;
+                    const formattedNode = {
+                        ...node,
+                        key: this.nodeKey, // 使用log_url或name作为key
+                        scopedSlots: { title: 'title' }
+                    };
+
+                    if (node.children && node.children.length > 0) {
+                        formattedNode.children = this.formatTreeData(node.children);
+                    }
+
+                    return formattedNode;
+                });
+            },
+            expandAll() {
+                const getAllKeys = (nodes) => {
+                    let keys = [];
+                    nodes.forEach(node => {
+                        keys.push(node.key);
+                        if (node.children) {
+                            keys = keys.concat(getAllKeys(node.children));
+                        }
+                    });
+                    return keys;
+                };
+                this.expandedKeys = getAllKeys(this.treeData);
+            },
+            collapseAll() {
+                this.expandedKeys = [];
+            },
+            handleTreeSelect(selectedKeys, { selectedNodes }) {
+                if (selectedNodes.length === 0) return;
+
+                const node = selectedNodes[0];
+                if (node.data.props.type === 'file') {
+                    this.currentLogUrl = node.data.props.log_url;
+                }
+            },
+            handleRename(log_url, name) {
+                this.currentRenameUrl = log_url;
+                this.newFileName = name;
+                this.renameModalVisible = true;
+            },
+            handleRenameConfirm() {
+                if (!this.newFileName.trim()) {
+                    this.$message.warning('请输入有效的文件名');
+                    return;
+                }
+
+                Ajax.post({
+                    url: '/system/api/log/updateLog?UpdateType=Rename',
+                    param: {
+                        log_url: _this.currentRenameUrl,
+                        new_name: _this.newFileName
+                    },
+                    success(result) {
+                        if(result.IsSuccess === '1') {
+                            _this.$message.success('重命名成功');
+                            _this.renameModalVisible = false;
+                            _this.loadLogData(); // 重新加载数据
+                        } else {
+                            _this.$message.warning(result.Msg);                        }
+                    }
+                });
+            },
+            handleDelete(log_url, name) {
+                this.$confirm({
+                    title: '确认删除',
+                    content: `确定要删除日志【${name}】?`,
+                    okText: '确定',
+                    okType: 'danger',
+                    cancelText: '取消',
+                    onOk() {
+                        Ajax.post({
+                            url: '/system/api/log/updateLog?UpdateType=Delete',
+                            param: {
+                                log_url: log_url
+                            },
+                            success(result) {
+                                if(result.IsSuccess === '1') {
+                                    _this.$message.success('删除成功');
+                                    _this.loadLogData(); // 重新加载数据
+                                } else {
+                                    _this.$message.warning(result.Msg);                        }
+                            }
+                        });
+                    }
+                });
+            },
+            onExpand(expandedKeys) {
+                this.expandedKeys = expandedKeys;
+            }
+        }
+    });
+</script>
+</html>

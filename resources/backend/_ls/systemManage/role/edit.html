@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑页面</title>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <div style="height: 50px;position: sticky;top: 24px;z-index: 1;">
+        <a-button size="small" @click="onBack"><a-icon type="rollback"></a-icon> 返回</a-button>
+        <a-button v-if="operate !== 'View'" type="primary" size="small" @click="savaForm" style="margin-left: 10px;"><a-icon type="save"></a-icon> 保存</a-button> |
+        <a-button size="small" @click="expandAll">展开全部</a-button>
+        <a-button size="small" @click="collapseAll">折叠全部</a-button>
+        <a-button v-if="operate !== 'View'" size="small" @click="handleAllChecked(true)">全选</a-button>
+        <a-button v-if="operate !== 'View'"  size="small" @click="handleAllChecked(false)">取消全选</a-button>
+    </div>
+    <p style="color: #1890ff;">提示：右键可以一键选中所有子节点或取消选中所有子节点</p>
+    <a-tree
+        checkable
+        check-strictly
+        show-icon
+        :tree-data="menuTree.data"
+        :disabled="menuTree.disableCheckbox"
+        :checked-keys="menuTree.checkedKeys"
+        :expanded-keys="menuTree.expandedKeys"
+        :replace-fields="{ title: 'menu_name', key: 'menu_id', children: 'children' }"
+        @expand="handleMenuTreeExpand"
+        @check="handleMenuTreeCheck"
+        @click="handleMenuTreeClick"
+    >
+        <a-icon type="appstore" theme="twoTone" two-tone-color="orange" slot="appstore"></a-icon>
+        <a-icon type="file" theme="twoTone" two-tone-color="#1890ff" slot="file"></a-icon>
+        <a-icon type="file" theme="twoTone" two-tone-color="blue" slot="iframe"></a-icon>
+        <a-icon type="link" slot="link" style="color: blue;"></a-icon>
+        <a-icon type="check-square" theme="twoTone" two-tone-color="green" slot="check-square"></a-icon>
+        <template v-if="!menuTree.disableCheckbox" #title="node">
+            <span @contextmenu="menuTree.visibleDropdownMenuId = node.menu_id">{{node.menu_name}}</span>
+            <!-- 右键菜单 -->
+            <a-dropdown :visible="node.menu_id === menuTree.visibleDropdownMenuId">
+                <span></span>
+                <template #overlay>
+                    <a-menu class="menu-tree-contextmenu">
+                        <a-menu-item key="1" @click="handleCheckedChildMenu(node, true)">选中所有子节点</a-menu-item>
+                        <a-menu-item key="2" @click="handleCheckedChildMenu(node, false)">取消选中所有子节点</a-menu-item>
+                    </a-menu>
+                </template>
+            </a-dropdown>
+        </template>
+    </a-tree>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+                id: params.id,
+                operate: params.operate,
+                menuTree: {
+                    data: [],
+                    // 存储当前勾选的节点
+                    checkedKeys: [],
+                    // 存储当前展开的
+                    expandedKeys: [],
+                    // 用来存储原始权限数据，供取消时恢复
+                    originalPermissions: [],
+                    // Tree 组件的属性
+                    treeProps: {
+                        title: 'menu_name',
+                        key: 'menu_id',
+                        children: 'children',
+                    },
+                    // 禁用复选框
+                    disableCheckbox: false,
+                    // 右键下拉框菜单
+                    visibleDropdownMenuId: null,
+                    childMenuIds: []
+                }
+            },
+            created() {
+                _this = this;
+
+                if (this.operate === 'View') {
+                    this.menuTree.disableCheckbox = true;
+                }
+
+                // 获取该角色的权限数据
+                Ajax.get({
+                    url: '/system/api/role/getRoleMenuList',
+                    param: { role_id: _this.id },
+                    success: (result) => {
+                        if (result.IsSuccess === "1") {
+                            _this.menuTree.data = _this.transformMenuData(result.data);
+                            _this.menuTree.originalPermissions = result.data.filter(item => item.has_permission === "1").map(item => item.menu_id);
+                            _this.menuTree.checkedKeys = [..._this.menuTree.originalPermissions]; // 初始化选中的菜单
+                            // 展开全部
+                            _this.expandAll();
+                        } else {
+                            this.$message.error(result.Msg);
+                        }
+                    },
+                });
+
+                // 全局点击事件
+                document.addEventListener('click', (e) => {
+                    // 如果不是右键菜单则关闭右键菜单
+                    if (!e.target.closest('.menu-tree-contextmenu')) {
+                        _this.menuTree.visibleDropdownMenuId = null;
+                    }
+                });
+            },
+            methods: {
+                // 返回
+                onBack() {
+                    QiankunUtil.toPage(props.parentUrl + 'index.html', { backParams: params.backParams });
+                },
+                // 将接口返回的数据转换为树形结构
+                transformMenuData(menuData) {
+                    const menuMap = {};
+
+                    // 构建每个菜单的父子关系
+                    menuData.forEach(menu => {
+                        let icon = '';
+
+                        switch(menu.type) {
+                            case '1':
+                                icon = 'appstore';
+                                break;
+                            case '2':
+                                icon = 'file';
+                                break;
+                            case '3':
+                                icon = 'iframe';
+                                break;
+                            case '4':
+                            case '5':
+                                icon = 'link';
+                                break;
+                            case '6':
+                                icon = 'check-square';
+                                break;
+                            default:
+                                icon = 'question';
+                        }
+
+                        menuMap[menu.menu_id] = { ...menu, ...{ slots: {icon: icon} }, children: [],
+                            disableCheckbox: this.menuTree.disableCheckbox };
+                    });
+
+                    // 构建树结构
+                    const treeData = [];
+                    menuData.forEach(menu => {
+                        if (menu.parent_menu_id) {
+                            if (menuMap[menu.parent_menu_id]) {
+                                menuMap[menu.parent_menu_id].children.push(menuMap[menu.menu_id]);
+                            }
+                        } else {
+                            treeData.push(menuMap[menu.menu_id]);
+                        }
+                    });
+                    return treeData;
+                },
+                // 当树的勾选项发生变化时
+                handleMenuTreeCheck(checkedKeys,e) {
+                    // this.menuTree.checkedKeys = checkedKeys;
+                    let currentNode = e.node;
+
+                    if (e.checked) {  // 如果是选中该节点，则选中所有的父节点
+                        this.menuTree.checkedKeys.push(currentNode.$vnode.key);
+
+                        // 遍历父节点，并选中
+                        while (true) {
+                            if (currentNode.$parent && currentNode.$parent.$vnode.key) {
+                                currentNode = currentNode.$parent;
+
+                                // 不存在则添加
+                                if (this.menuTree.checkedKeys.filter(id => id === currentNode.$vnode.key).length === 0) {
+                                    this.menuTree.checkedKeys.push(currentNode.$vnode.key);
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                    } else {
+                        this.menuTree.checkedKeys = this.menuTree.checkedKeys.filter(id => id !== currentNode.$vnode.key)
+                    }
+                },
+                // 展开所有节点
+                expandAll() {
+                    this.menuTree.expandedKeys = this.getAllMenuIds(this.menuTree.data);
+                },
+                // 获取所有菜单的菜单ID，用于展开所有节点
+                getAllMenuIds(menuData) {
+                    let ids = [];
+                    menuData.forEach(item => {
+                        ids.push(item.menu_id);
+                        if (item.children && item.children.length) {
+                            ids = ids.concat(this.getAllMenuIds(item.children));
+                        }
+                    });
+                    return ids;
+                },
+                // 折叠所有节点
+                collapseAll() {
+                    this.menuTree.expandedKeys = [];
+                },
+                // 当树节点被点击时
+                handleMenuTreeClick(e, node) {
+                    const key = node.$vnode.key
+
+                    if (this.menuTree.expandedKeys.includes(key)) {
+                        // 如果节点已经展开，点击后折叠
+                        this.menuTree.expandedKeys = this.menuTree.expandedKeys.filter(id => id !== key);
+                    } else {
+                        // 如果节点没有展开，点击后展开
+                        this.menuTree.expandedKeys.push(key);
+                    }
+                },
+                // 全选
+                handleAllChecked(isChecked) {
+                    this.menuTree.data.forEach(item => {
+                        this.handleCheckedChildMenu(item, isChecked);
+                    })
+                },
+                // 选中子节点
+                handleCheckedChildMenu(node, isChecked) {
+                    this.menuTree.childMenuIds = [];
+                    this.getAllChildMenuIds(node, isChecked);
+
+                    if (isChecked) {
+                        this.menuTree.checkedKeys = this.menuTree.checkedKeys.concat(
+                            // childMenuIds中checkedKeys没有的所有元素
+                            this.menuTree.childMenuIds.filter(id =>
+                                !this.menuTree.checkedKeys.includes(id)
+                            )
+                        );
+                    } else {
+                        // checkedKeys中childMenuIds没有的所有元素
+                        this.menuTree.checkedKeys = this.menuTree.checkedKeys.filter(id =>
+                            !this.menuTree.childMenuIds.includes(id)
+                        )
+                    }
+                },
+                getAllChildMenuIds(node) {
+                    this.menuTree.childMenuIds.push(node.menu_id);
+
+                    if (node.children) {
+                        for (let i = 0;i < node.children.length;i++) {
+                            this.getAllChildMenuIds(node.children[i]);
+                        }
+                    }
+                },
+                handleMenuTreeExpand(keys) {
+                    this.menuTree.expandedKeys = keys;
+                },
+                // 保存表单
+                savaForm() {
+                    Ajax.post({
+                        url: '/system/api/role/updateRoleMenu',
+                        param: {
+                            role_id: _this.id,
+                            menu_id_arr: _this.menuTree.checkedKeys.join(',')
+                        },
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.$message.success('编辑成功');
+                                // _this.onBack();
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>

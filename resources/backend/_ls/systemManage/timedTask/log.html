@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-button v-if="pageParams.backMenuParams" size="small"
+              @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})"
+              style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>定时任务日志管理</b>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 400px;">
+            <a-select v-model="searchConfig.searchType" style="width: 130px;">
+                <a-select-option value="timed_task_log_id">ID</a-select-option>
+                <a-select-option value="func_path">函数路径</a-select-option>
+                <a-select-option value="status">状态</a-select-option>
+                <a-select-option value="type">类型</a-select-option>
+            </a-select>
+            <a-select v-model="searchConfig.IsEqual" style="width: 70px;">
+                <a-select-option value="0">包含</a-select-option>
+                <a-select-option value="1">等于</a-select-option>
+            </a-select>
+            <a-input v-model="searchConfig.searchKey" placeholder="请输入搜索关键字" style="width: calc(100% - 200px);"/>
+        </a-input-group>
+        <a-button type="primary" @click="search(false)"><a-icon type="search"></a-icon> 搜索</a-button>
+        <a-button @click="search(true)"><a-icon type="sync"></a-icon> 重置</a-button>
+    </div>
+    <div class="ls-table-tool" style="width: 100%;display: flex;justify-content: space-between;">
+        <div>
+            <a-button @click="edit(null, 'BatchDelete')" v-if="$ls.hasPermission('lspk:ls:timedTaskLog:delete')"><a-icon type="delete" style="color: red;"></a-icon> 批量删除</a-button>
+            <a-button @click="edit(null, 'Clear')" v-if="$ls.hasPermission('lspk:ls:timedTaskLog:delete')">清空</a-button>
+        </div>
+    </div>
+    <a-table
+            :columns="tableColumns"
+            :data-source="tableData"
+            :pagination="tablePagination"
+            @change="handleTableChange"
+            :loading="tableLoading"
+            :row-selection="{
+            selectedRowKeys: selectedRowKeys,
+                onChange: onSelectChange,
+            }"
+            :scroll="{ x: 1370 }"
+            size="small" bordered
+    >
+        <template slot="action" slot-scope="text, record">
+            <a-button type="link" size="small" title="查看" @click="edit(record.timed_task_log_id,'View')"><a-icon type="eye"></a-icon></a-button>
+            <a-popconfirm title="确定删除该项？" v-if="$ls.hasPermission('lspk:ls:timedTaskLog:delete')" @confirm="edit(record.timed_task_log_id,'Delete')" @cancel="" ok-text="确定" cancel-text="取消">
+                <a-button type="link" size="small" title="删除" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
+            </a-popconfirm>
+        </template>
+        <template slot="status" slot-scope="text">
+            <a-tag v-if="text == '1'" color="green">成功</a-tag>
+            <a-tag v-else-if="text == '2'" color="red">失败</a-tag>
+        </template>
+        <template slot="type" slot-scope="text">
+            <a-tag v-if="text == '1'" color="blue">自动触发</a-tag>
+            <a-tag v-else-if="text == '2'" color="pink">手动触发</a-tag>
+        </template>
+    </a-table>
+</div>
+</body>
+<script src="./js/log.js"></script>
+</html>

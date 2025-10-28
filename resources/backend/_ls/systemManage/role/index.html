@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>列表页面</title>
+    <style>
+        /* 表头居中 */
+        .ls-container .ant-table-thead > tr > th {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="ls-card ls-container">
+    <a-button v-if="pageParams.backMenuParams" size="small"
+        @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})"
+        style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
+    <b>角色管理</b>
+    <a-divider></a-divider>
+    <div class="ls-table-tool">
+        <a-input-group compact style="width: 350px;">
+            <a-select v-model="searchConfig.searchType" style="width: 100px;">
+                <a-select-option value="role_id">角色代码</a-select-option>
+                <a-select-option value="role_name">角色名称</a-select-option>
+            </a-select>
+            <a-select v-model="searchConfig.IsEqual" style="width: 70px;">
+                <a-select-option value="0">包含</a-select-option>
+                <a-select-option value="1">等于</a-select-option>
+            </a-select>
+            <a-input v-model="searchConfig.searchKey" placeholder="请输入搜索关键字" style="width: calc(100% - 170px);"/>
+        </a-input-group>
+        <a-input-group compact style="width: 180px;">
+            <div class="ls-control-tag">允许登录后台</div>
+            <a-select v-model="searchConfig.model.is_allow_login_backend" style="width: calc(100% - 108px);">
+                <a-select-option value="">所有</a-select-option>
+                <a-select-option value="1">是</a-select-option>
+                <a-select-option value="0">否</a-select-option>
+            </a-select>
+        </a-input-group>
+        <a-input-group compact style="width: 130px;">
+            <div class="ls-control-tag">禁用</div>
+            <a-select v-model="searchConfig.model.is_disable" style="width: calc(100% - 52px);">
+                <a-select-option value="">所有</a-select-option>
+                <a-select-option value="1">是</a-select-option>
+                <a-select-option value="0">否</a-select-option>
+            </a-select>
+        </a-input-group>
+        <a-button type="primary" @click="search(false)"><a-icon type="search"></a-icon> 搜索</a-button>
+        <a-button @click="search(true)"><a-icon type="sync"></a-icon> 重置</a-button>
+    </div>
+    <div class="ls-table-tool" style="width: 100%;display: flex;justify-content: space-between;">
+        <div>
+            <a-button type="primary" @click="openAddModal" v-if="$ls.hasPermission('lspk:ls:role:add')"><a-icon type="plus"></a-icon> 新建</a-button>
+        </div>
+    </div>
+    <a-table
+        :columns="tableColumns"
+        :data-source="tableData"
+        :pagination="tablePagination"
+        @change="handleTableChange"
+        :loading="tableLoading"
+        :scroll="{ x: 1200 }"
+        size="small"
+    >
+        <template slot="action" slot-scope="text, record">
+            <a-button type="link" @click="editPermission(record.role_id,'View')" v-if="$ls.hasPermission('lspk:ls:role:menu:list')">[查看权限]</a-button>
+            <a-button type="link" @click="editPermission(record.role_id),'Edit'" v-if="$ls.hasPermission('lspk:ls:role:menu:edit')">[编辑权限]</a-button>
+            <a-popconfirm title="确定删除该项？" v-if="$ls.hasPermission('lspk:ls:role:delete')" @confirm="deleteRole(record.role_id)" @cancel="" ok-text="确定" cancel-text="取消">
+                <a-button type="link" size="small" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
+            </a-popconfirm>
+            <template v-if="record.editable">
+                <a-button type="link" size="small" title="查看" @click="edit(record.role_id,false,true)" style="color: green;"><a-icon type="save"></a-icon></a-button>
+                <a-button type="link" size="small" title="编辑" @click="edit(record.role_id,false)"><a-icon type="close"></a-icon></a-button>
+            </template>
+            <a-button v-else type="link" size="small" title="编辑 " @click="edit(record.role_id,true)" v-if="$ls.hasPermission('lspk:ls:role:edit')"><a-icon type="edit"></a-icon></a-button>
+        </template>
+        </template>
+        <template slot="role_name" slot-scope="text, record">
+            <a-input v-if="record.editable" v-model="record.role_name"></a-input>
+            <template v-else>{{text}}</template>
+        </template>
+        <template slot="is_allow_login_backend" slot-scope="text, record">
+            <a-switch v-if="record.role_id !== '1'" size="small" @change="editCol(record.role_id,record,'IsAllowLoginBackend')" :checked="text === '1'" :disabled="!$ls.hasPermission('lspk:ls:role:edit:isAllowLoginBackend')"></a-switch>
+            <a-icon v-else type="check-circle" style="color: green;"></a-icon>
+        </template>
+        <template slot="is_disable" slot-scope="text, record">
+            <a-switch v-if="record.role_id !== '1'" size="small" @change="editCol(record.role_id,record,'IsDisable')" :checked="text === '1'" :disabled="!$ls.hasPermission('lspk:ls:role:edit:isDisable')"></a-switch>
+            <a-icon v-else type="close-circle" style="color: red;"></a-icon>
+        </template>
+    </a-table>
+    <!-- 新建角色的模态框 -->
+    <a-modal
+        v-model="isAddModalVisible"
+        title="新建角色"
+        @ok="add"
+        @cancel=""
+        ok-text="保存" cancel-text="取消"
+    >
+        <a-form :form="formData" layout="vertical">
+            <a-form-item label="角色名称">
+                <a-input v-model="formData.role_name" placeholder="请输入角色名称"/>
+            </a-form-item>
+        </a-form>
+    </a-modal>
+</div>
+</div>
+</body>
+<script>
+    function init(props, params) {
+        let _this = null;
+
+        new Vue({
+            el: ".ls-container",
+            data: {
+                pageParams: params,
+                // 表格字段
+                tableColumns: [{
+                    title: '角色代码', dataIndex: 'role_id', align: 'center', sorter: true, width: 100
+                }, {
+                    title: '角色名称', dataIndex: 'role_name', align: 'center', width: 200, scopedSlots: { customRender: 'role_name' }
+                }, {
+                    title: '登录后台', dataIndex: 'is_allow_login_backend', align: 'center', sorter: true, width: 100, scopedSlots: { customRender: 'is_allow_login_backend' }
+                }, {
+                    title: '禁用', dataIndex: 'is_disable', align: 'center', sorter: true, width: 70, scopedSlots: { customRender: 'is_disable' }
+                }, {
+                    title: '创建时间', dataIndex: 'ls_create_time', width: 150, align: 'center'
+                }, {
+                    title: '创建者', dataIndex: 'ls_create_by', width: 100, align: 'center'
+                }, {
+                    title: '更新时间', dataIndex: 'ls_update_time', width: 150, align: 'center'
+                }, {
+                    title: '更新者', dataIndex: 'ls_update_by', width: 100, align: 'center'
+                }, {
+                    title: '', scopedSlots: { customRender: 'action' }
+                }],
+                // 表格数据
+                tableData: [],
+                tableLoading: false,
+                // 表格原始数据，用于取消时恢复
+                tableDataOld: [],
+                // 表格分页配置
+                tablePagination: {
+                    position: 'top',
+                    pageSize: 10, // 每页显示的条数
+                    showSizeChanger: true, // 是否可以改变每页显示的条数
+                    pageSizeOptions: [1, 2, 5, 10, 30, 50, 100, 200, 300, 500, 600, 700, 800, 900, 1000], // 可选的每页显示条数
+                    showQuickJumper: true, // 是否可以快速跳转到指定页
+                    showTotal: total => `共 ${total} 条`, // 显示总条数和当前数据范围
+                    current: 1, // 当前页数
+                    total: 0 // 总条数
+                },
+                // 表格排序配置
+                tableSort: {
+                    field: '',
+                    order: ''
+                },
+                // 搜索配置
+                searchConfig: {
+                    searchType: 'role_name',
+                    searchKey: '',
+                    IsEqual: '0',
+                    model: {
+                        is_allow_login_backend: '',
+                        is_disable: ''
+                    },
+                    params: params.backParams?.searchParams
+                },
+                isAddModalVisible: false,
+                formData: {
+                    role_name: null
+                }
+            },
+            created() {
+                _this = this;
+                // 加载数据
+                this.loadTableList(params.backParams?params.backParams:{
+                    PageNo: this.tablePagination.current,
+                    PageCount: this.tablePagination.pageSize
+                });
+            },
+            mounted() {},
+            methods: {
+                handleTableChange(pagination, filters, sorter) {
+                    this.loadTableList({
+                        ...{
+                            PageNo: pagination.current,
+                            PageCount: pagination.pageSize,
+                            SortField: sorter.field,
+                            SortOrder: sorter.order === 'ascend' ? 'asc' : sorter.order === 'descend' ? 'desc' : ''
+                        }, ...filters
+                    });
+                },
+                // 加载表格列表
+                loadTableList(params) {
+                    this.tableLoading = true;
+                    Ajax.get({
+                        url: '/system/api/role/getRoleList',
+                        param: {...params, ...this.searchConfig.params},
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.tableData = result.data;
+                                _this.tablePagination.total = result.dataCount;
+                                _this.tableLoading = false;
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                    this.$ls.table.updatePaginationAndSort.call(this ,params);
+                },
+                // 搜索
+                search(isReset) {
+                    for (const key in this.searchConfig.params) {
+                        delete this.searchConfig.params[key]
+                    }
+
+                    if (!isReset) {
+                        this.searchConfig.params = Object.assign({},this.searchConfig.model);
+                        this.searchConfig.params[this.searchConfig.searchType] = this.searchConfig.searchKey;
+                        this.tablePagination.current = 1;
+                    }
+
+                    this.$ls.table.clearSort.call(this);
+                    this.loadTableList({
+                        PageNo: 1,
+                        PageCount: params.pageSize?params.pageSize:this.tablePagination.pageSize
+                    });
+                },
+                add() {
+                    Ajax.post({
+                        url: '/system/api/role/updateRole?UpdateType=Add',
+                        param: _this.formData,
+                        success(result) {
+                            if (result.IsSuccess === '1') {
+                                _this.isAddModalVisible = false;
+                                _this.$message.success('添加成功');
+                                _this.loadTableList({
+                                    PageNo: 1,
+                                    PageCount: _this.tablePagination.pageSize
+                                });
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                },
+                // 编辑表格
+                edit(id,editable,save) {
+                    const newData = [...this.tableData];
+                    let target = newData.filter(item => id === item.role_id)[0];
+
+                    // 如果是取消则将该列表格原始数据修改到表格数据
+                    if (!editable && !save) {
+                        Object.assign(target, this.tableDataOld.filter(item => item.role_id === id)[0]);
+                    }
+
+                    if (target) {
+                        target.editable = editable;
+                        this.tableData = newData;
+
+                        // 编辑前保存该列原始数据
+                        if (editable) {
+                            this.tableDataOld.push(Object.assign({}, target));
+                        } else {
+                            if (save) {
+                                Ajax.post({
+                                    url: '/system/api/role/updateRole?UpdateType=Edit',
+                                    param: target,
+                                    success(result) {
+                                        if (result.IsSuccess === '1') {
+                                            _this.$message.success('编辑成功');
+                                        } else {
+                                            Object.assign(target, _this.tableDataOld.filter(item => item.role_id === id)[0]);
+                                            target.editable = false;
+                                            _this.$message.error(result.Msg);
+                                        }
+                                        _this.tableDataOld = [..._this.tableDataOld.filter(item => item.role_id !== id)];
+                                    }
+                                });
+                            } else {
+                                this.tableDataOld = [...this.tableDataOld.filter(item => item.role_id !== id)];
+                            }
+                        }
+                    }
+                },
+                // 删除
+                deleteRole(id) {
+                    Ajax.post({
+                        url: '/system/api/role/updateRole?UpdateType=Delete',
+                        param: {
+                            role_id: id
+                        },
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.$message.success('删除成功');
+                                _this.loadTableList({
+                                    PageNo: _this.tablePagination.current,
+                                    PageCount: _this.tablePagination.pageSize,
+                                    SortField: _this.tableSort.field,
+                                    SortOrder: _this.tableSort.order
+                                });
+                            } else {
+                                _this.$message.error(result.Msg);
+                            }
+                        }
+                    });
+                },
+                // 修改单个列
+                editCol(id,record,type) {
+                    const param = { role_id: id };
+                    switch (type) {
+                        case 'IsAllowLoginBackend':
+                            record.is_allow_login_backend = record.is_allow_login_backend === '1'?'0':'1';
+                            param.is_allow_login_backend = record.is_allow_login_backend;
+                            break;
+                        case 'IsDisable':
+                            record.is_disable = record.is_disable === '1'?'0':'1';
+                            param.is_disable = record.is_disable;
+                            break;
+                    }
+
+                    Ajax.post({
+                        url: '/system/api/role/updateRole?UpdateType=' + type,
+                        param: param,
+                        success(result) {
+                            if(result.IsSuccess === '1') {
+                                _this.$message.success('操作成功');
+                            } else {
+                                _this.$message.error(result.Msg);
+                                _this.loadTableList({
+                                    PageNo: _this.tablePagination.current,
+                                    PageCount: _this.tablePagination.pageSize,
+                                    SortField: _this.tableSort.field,
+                                    SortOrder: _this.tableSort.order
+                                });
+                            }
+                        }
+                    });
+                },
+                editPermission(id,operate) {
+                    QiankunUtil.toPage(props.parentUrl + 'edit.html', {
+                        id: id,
+                        operate: operate,
+                        backParams: {
+                            PageNo: this.tablePagination.current,
+                            PageCount: this.tablePagination.pageSize,
+                            SortField: this.tableSort.field,
+                            SortOrder: this.tableSort.order,
+                            searchParams: this.searchConfig.params
+                        }
+                    });
+                },
+                openAddModal() {
+                    this.isAddModalVisible = true;
+                    this.formData.role_name = '';
+                }
+            }
+        });
+    }
+
+    // 获取qiankun子应用生命周期
+    QiankunUtil.getLifecycles({
+        mount(props) {
+            init(props, props.params);
+        }
+    });
+</script>
+</html>
