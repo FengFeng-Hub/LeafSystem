@@ -21,9 +21,9 @@
 
 ### 项目截图
 
-![系统管理-菜单列表](https://github.com/Drew0323/LeafSystem/blob/master/image/1.jpg)
+![系统管理-菜单列表](https://github.com/FengFeng-Hub/LeafSystem/blob/master/image/1.jpg)
 
-![系统管理-配置管理](https://github.com/Drew0323/LeafSystem/blob/master/image/2.jpg)
+![系统管理-配置管理](https://github.com/FengFeng-Hub/LeafSystem/blob/master/image/1.jpg?raw=true)
 
 ### 联系方式
 
