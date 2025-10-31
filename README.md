@@ -1,14 +1,19 @@
 # 基于springboot实现的中/后台脚手架
 
-### 项目介绍
-
-该项目后端使用springboot框架，前端使用vue2和ant-design-vue1.7.8
-
-### 部署说明
-
-(1)将“数据库和maven”目录下数据库导入到本地
-
-(2)将“数据库和maven”目录下“leaf”目录为项目所需的maven依赖，将此目录放在maven仓库的根目录下面即可
+### 项目背景
+使用 springboot+antd-v+qiankunjs 实现的通用中/后台脚手架（类似于若依后台管理系统），基于主
+流开源技术栈构建的快速开发平台。将常用函数进行封装使开发者能做到开箱即用，旨在帮助开发者
+高效搭建企业级后台管理系统。
+### 核心功能模块描述
+1.通用模块：将常用工具类进行封装，例如 ORM、Date 对象的常用操作、网络请求、发送邮件、Redis
+操作、图片处理、二维码、数据验证、AES/RSA/MD5 等，使开发者只需要通过简单配置以及函数调用就
+可以实现这些功能，不需要关心底层源码。
+2.权限管理：基于 RBAC 模型，支持用户、角色、菜单、按钮级权限控制。
+3.系统监控：实时监控系统运行状态、缓存使用情况等。
+4.代码生成器：根据数据库表结构一键生成前后端代码（含增删改查、分页等功能）。
+5.定时任务：内置 Quartz 调度器，支持可视化配置和管理。
+6.日志管理：记录异常日志，便于审计与排查问题。
+7.参数管理：统一管理系统常用动态参数配置。
 
 ### 使用说明
 
@@ -16,32 +21,12 @@
 
 ### 项目截图
 
-![系统管理-用户](https://github.com/Drew0323/LeafSystem/blob/master/img/系统管理-用户.jpg)
+![系统管理-菜单列表](https://github.com/Drew0323/LeafSystem/blob/master/image/1.jpg)
 
-![系统管理-角色](https://github.com/Drew0323/LeafSystem/blob/master/img/系统管理-角色.jpg)
-
-![系统管理-菜单列表](https://github.com/Drew0323/LeafSystem/blob/master/img/系统管理-菜单列表.jpg)
-
-![系统管理-菜单树](https://github.com/Drew0323/LeafSystem/blob/master/img/系统管理-菜单树.jpg)
-
-![系统管理-配置管理](https://github.com/Drew0323/LeafSystem/blob/master/img/系统管理-配置管理.jpg)
-
-![服务器管理-日志](https://github.com/Drew0323/LeafSystem/blob/master/img/服务器管理-日志.jpg)
-
-![服务器管理-服务器监控](https://github.com/Drew0323/LeafSystem/blob/master/img/服务器管理-服务器监控.jpg)
-
-![服务器管理-缓存监控](https://github.com/Drew0323/LeafSystem/blob/master/img/服务器管理-缓存监控.jpg)
-
-![开发-代码生成1](https://github.com/Drew0323/LeafSystem/blob/master/img/开发-代码生成1.jpg)
-
-![开发-代码生成2](https://github.com/Drew0323/LeafSystem/blob/master/img/开发-代码生成2.jpg)
-
-![开发-代码生成3](https://github.com/Drew0323/LeafSystem/blob/master/img/开发-代码生成3.jpg)
-
-![开发-图标](https://github.com/Drew0323/LeafSystem/blob/master/img/开发-图标.jpg)
-
-![开发-文档](https://github.com/Drew0323/LeafSystem/blob/master/img/开发-文档.jpg)
+![系统管理-配置管理](https://github.com/Drew0323/LeafSystem/blob/master/image/2.jpg)
 
 ### 联系方式
 
 QQ：3186786629
+
+### 演示地址：http://8.148.252.98:8080/backend/index
