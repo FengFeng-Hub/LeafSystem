@@ -7,7 +7,7 @@ function init(props, params) {
             pageParams: params,
             // 表格字段
             tableColumns: [{
-                title: '操作', align: 'center', width: 120, fixed: 'left', scopedSlots: { customRender: 'action' }
+                title: '操作', align: 'center', width: 200, fixed: 'left', scopedSlots: { customRender: 'action' }
             }, {
                 title: '用户代码', dataIndex: 'user_id', align: 'center', sorter: true, width: 100, fixed: "left"
             }, {
@@ -79,7 +79,10 @@ function init(props, params) {
             // 多选框
             // 选中的表格行key
             selectedRowKeys: [],
-            selectedIds: []
+            selectedIds: [],
+            showResetPwdModal: false,
+            resetPwdUserId: '',
+            resetPwdNewPassword: ''
         },
         created() {
             _this = this;
@@ -337,6 +340,28 @@ function init(props, params) {
             },
             roleSelectFocus() {
                 this.loadRoleSelect();
+            },
+            handleShowResetPwdModal(userId) {
+                this.resetPwdUserId = userId;
+                this.resetPwdNewPassword = '';
+                this.showResetPwdModal = true;
+            },
+            handleResetPwd() {
+                Ajax.post({
+                    url: '/system/api/user/updateUser?UpdateType=ResetPwd',
+                    param: {
+                        user_id: _this.resetPwdUserId,
+                        new_password: _this.resetPwdNewPassword
+                    },
+                    success(result) {
+                        if (result.IsSuccess === '1') {
+                            _this.$message.success('操作成功');
+                            _this.showResetPwdModal = false;
+                        } else {
+                            _this.$message.error(result.Msg);
+                        }
+                    }
+                });
             }
         }
     });

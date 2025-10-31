@@ -926,6 +926,17 @@ UpdateType=IsDisable
 | user_id    | number | 是   | 用户代码 |
 | is_disable | number | 否   | 是否禁用 |
 
+##### 4.5.5.重置密码
+
+UpdateType=ResetPwd
+
+权限键:lspk:ls:user:edit:resetPwd
+
+| 字段         | 类型   | 必填 | 说明     |
+| ------------ | ------ | ---- | -------- |
+| user_id      | number | 是   | 用户代码 |
+| new_password | string | 否   | 新密码   |
+
 #### 4.6.批量修改用户 (POST) 
 
 接口地址:/system/api/user/batchUpdateUser
@@ -977,6 +988,8 @@ UpdateType=Delete
 接口地址:/system/api/user/updatePersonal
 
 登录验证:后台
+
+权限键:lspk:ls:user:updatePersonal
 
 **请求参数 Body**
 

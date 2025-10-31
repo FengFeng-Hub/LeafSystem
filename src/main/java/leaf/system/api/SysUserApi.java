@@ -611,6 +611,29 @@ public class SysUserApi {
                     return JSONMap.success();
                 }
                 break;
+            case "ResetPwd":
+                if(!ApiGlobalInterceptor.permission("lspk:ls:user:edit:resetPwd")) {
+                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    return null;
+                }
+
+                if(userId.isEmpty()) {
+                    return JSONMap.error("用户代码不能为空");
+                }
+
+                String newPassword = Http.param("new_password");
+
+                if(Valid.isBlank(newPassword)) {
+                    return JSONMap.error("新密码不能为空");
+                }
+
+                if (DB.update("" +
+                        "update sys_user " +
+                        "set password = '" + DB.e(SysUser.md5Pwd(newPassword)) + "', pwd_update_date = now() " +
+                        "where user_id = '" + DB.e(userId) + "'") != -1) {
+                    return JSONMap.success();
+                }
+                break;
             default:
                 return JSONMap.error("修改类型有误");
         }
@@ -696,7 +719,7 @@ public class SysUserApi {
      * 修改个人信息
      */
     @PostMapping("/system/api/user/updatePersonal")
-    @LoginToken(validBackend = true)
+    @LoginToken(validBackend = true, permissionKey = "lspk:ls:user:updatePersonal")
     public JSONMap updatePersonal() {
         String updateType = Http.param("UpdateType");
 
@@ -782,11 +805,11 @@ public class SysUserApi {
                 String newPassword = Http.param("new_password");
                 password = SysUser.md5Pwd(password);
 
-                if (password == null || Valid.isEmpty(password)) {
+                if (Valid.isEmpty(password)) {
                     return JSONMap.error("密码不能为空");
                 }
 
-                if (newPassword == null || newPassword.length() > 50) {
+                if (newPassword.length() > 50) {
                     return JSONMap.error("新密码范围是1-50个字符");
                 }
 

@@ -96,7 +96,7 @@
 			selectedRowKeys: selectedRowKeys,
 			onChange: onSelectChange,
 		}"
-		:scroll="{ x: 1740 }"
+		:scroll="{ x: 1820 }"
 		size="small" bordered
 	>
 		<template slot="action" slot-scope="text, record">
@@ -105,6 +105,7 @@
 			<a-popconfirm title="确定删除该项？" v-if="$ls.hasPermission('lspk:ls:user:delete')" @confirm="edit(record.user_id,'Delete')" @cancel="" ok-text="确定" cancel-text="取消">
 				<a-button type="link" size="small" title="删除" style="color: #f5222d;"><a-icon type="delete"></a-icon></a-button>
 			</a-popconfirm>
+			<a-button type="link" size="small" title="重置密码" @click="handleShowResetPwdModal(record.user_id)" v-if="$ls.hasPermission('lspk:ls:user:edit:resetPwd')">[重置密码]</a-button>
 		</template>
 		<template slot="avatar" slot-scope="text">
 			<img v-if="text && text !== ''" :src="text" width="50">
@@ -123,6 +124,11 @@
 			<a-switch size="small" @change="updateIsDisable(record.user_id,record)" :checked="text === '1'" :disabled="!$ls.hasPermission('lspk:ls:user:edit:isDisable')"/>
 		</template>
 	</a-table>
+	<!-- 重置密码对话框 -->
+	<a-modal v-model="showResetPwdModal" title="重置密码" @ok="handleResetPwd" centered>
+		<p>用户代码：{{resetPwdUserId}}</p>
+		<p><a-input-password v-model="resetPwdNewPassword" placeholder="请输入新密码"/></p>
+	</a-modal>
 </div>
 </body>
 <script src="./js/index.js"></script>
