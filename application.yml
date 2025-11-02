@@ -2,11 +2,6 @@ server:
   port: 8081
 
 spring:
-  # Quartz调度器
-  quartz:
-    job-store-type: memory  # 或 jdbc
-    jdbc:
-      initialize-schema: always  # 如果使用数据库存储
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -14,14 +9,24 @@ spring:
     username: root
     password: 123456
 #    type: com.alibaba.druid.pool.DruidDataSource
-    # 连接池配置
-    druid:
-      # 初始连接数 默认:0
-      initialSize: 0
-      # 最大并发连接数 默认:8
-      maxActive: 8
-      # 最小空闲连接数 默认:0
-      minIdle: 0
+    hikari:
+      # 最小空闲连接数
+      minimum-idle: 5
+      # 最大连接池大小
+      maximum-pool-size: 20
+      # 空闲连接最大存活时间（毫秒）
+      idle-timeout: 30000
+      # 连接最大存活时间（毫秒）
+      max-lifetime: 1800000
+      # 获取连接超时时间（毫秒）
+      connection-timeout: 20000
+      # 连接池名称
+      pool-name: HikariCP
+  # Quartz调度器
+  quartz:
+    job-store-type: memory  # 或 jdbc
+    jdbc:
+      initialize-schema: always  # 如果使用数据库存储
   # redis
   redis:
     host: 127.0.0.1

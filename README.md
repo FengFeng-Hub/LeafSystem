@@ -29,4 +29,6 @@
 
 QQ：3186786629
 
-### 演示地址：http://8.148.252.98:8080/backend/index
+### 演示地址：http://8.148.252.98:8081/backend/index
+账号：admin
+密码：admin

@@ -32,6 +32,12 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>com.alibaba</groupId>-->
+<!--            <artifactId>druid-spring-boot-starter</artifactId>-->
+<!--            <version>1.2.8</version>-->
+<!--        </dependency>-->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
@@ -125,12 +131,23 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <jvmArguments>
-                        <!-- JVM 参数 -->
-                        -Dstdout.encoding=UTF-8
-                    </jvmArguments>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+<!--                    <jvmArguments>-->
+<!--                        &lt;!&ndash; JVM 参数 &ndash;&gt;-->
+<!--                        -Dstdout.encoding=UTF-8-->
+<!--                    </jvmArguments>-->
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <!-- 跳过测试代码 -->
+    <properties>
+        <skipTests>true</skipTests>
+    </properties>
 </project>

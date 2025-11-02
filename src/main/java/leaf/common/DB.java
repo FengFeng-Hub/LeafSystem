@@ -8,6 +8,7 @@ import leaf.common.util.Num;
 import leaf.common.util.StrUtil;
 import leaf.common.util.Valid;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Function;
@@ -21,6 +22,7 @@ import java.util.function.Supplier;
  */
 public class DB {
     public static final DruidDataSource DRUID_DATA_SOURCE = new DruidDataSource();
+    private static DataSource DATA_SOURCE;
 
 //    /**
 //     * 配置连接
@@ -38,6 +40,14 @@ public class DB {
 //        DB.DRUID_DATA_SOURCE.setTestOnReturn(false);//配置向连接池归还连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
 //        DB.DRUID_DATA_SOURCE.close();//关闭数据源
 //    }
+
+    /**
+     * 配置连接
+     * @param dataSource dataSource
+     */
+    public static void druidConfig(DataSource dataSource) {
+        DATA_SOURCE = dataSource;
+    }
 
     /**
      * 配置连接
@@ -553,6 +563,9 @@ public class DB {
      */
     public static Connection getConnection() {
         try {
+            if (DATA_SOURCE != null) {
+                return DATA_SOURCE.getConnection();
+            }
             return DRUID_DATA_SOURCE.getConnection();//获取连接
         } catch (SQLException e1) {
             Log.write("Error_DB",Log.getSQLException(e1));
