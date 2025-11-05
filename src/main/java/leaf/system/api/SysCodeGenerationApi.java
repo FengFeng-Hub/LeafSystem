@@ -20,7 +20,7 @@ import java.util.Map;
  * 代码生成模块
  */
 @RestController
-public class SysCodeGenerationApi {
+public class SysCodeGenerationApi extends Http {
     String javaKeyword[] = {"abstract","assert","boolean","break","byte","case","catch","char","class","continue","default","do",
             "double","else","enum","extends","final","finally","float","for","if","implements","import","int",
             "interface","instanceof","long","native","new","package","private","protected","public","return","short","static",
@@ -32,10 +32,10 @@ public class SysCodeGenerationApi {
     @GetMapping("/system/api/codeGeneration/getDBTableInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:codeGeneration:DBTableInfo")
     public JSONMap getDBTableInfo() {
-        String tableName = Http.param("table_name");
-        String tableComment = Http.param("table_comment");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
+        String tableName = param("table_name");
+        String tableComment = param("table_comment");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
         tableName = DB.e(tableName);
         tableComment = DB.e(tableComment);
         String sql = "" +
@@ -44,7 +44,7 @@ public class SysCodeGenerationApi {
                 "from information_schema.tables " +
                 "where table_schema = (select database()) ";
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             if(!tableName.isEmpty()) {
                 sql += "and table_name = '" + tableName + "'";
             }
@@ -73,7 +73,7 @@ public class SysCodeGenerationApi {
                 else if(sortOrder.equals("desc")) sql += " order by " + sortField+" desc ";
                 break;
         }
-        return DB.sqlToJSONMap(sql,Http.param("PageNo"),Http.param("PageCount"),"100");
+        return DB.sqlToJSONMap(sql,param("PageNo"),param("PageCount"),"100");
     }
     /**
      * 获取数据库表格字段信息
@@ -81,11 +81,11 @@ public class SysCodeGenerationApi {
     @GetMapping("/system/api/codeGeneration/getDBTableFieldInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:codeGeneration:DBTableFieldInfo")
     public JSONMap getDBTableFieldInfo() {
-        return JSONMap.success(DB.query("" +
+        return success(DB.query("" +
                 "select column_name 'column_name',column_comment 'column_comment',column_type 'column_type'," +
                 "   is_nullable 'is_nullable',column_default 'column_default',column_key 'column_key' " +
                 "from information_schema.columns " +
-                "where table_schema = (select database()) and table_name = '" + DB.e(Http.param("table_name")) + "' " +
+                "where table_schema = (select database()) and table_name = '" + DB.e(param("table_name")) + "' " +
                 "order by ordinal_position"));
     }
     /**
@@ -105,27 +105,27 @@ public class SysCodeGenerationApi {
         List<Map> columnInfoList = (List<Map>) requestJSON.get("column_info_list");
 
         if(Valid.isEmpty(tableName)) {
-            return JSONMap.error("表名不能为空");
+            return error("表名不能为空");
         }
 
         if(Valid.isEmpty(tableDesc)) {
-            return JSONMap.error("表描述不能为空");
+            return error("表描述不能为空");
         }
 
         if(Valid.isEmpty(moduleName)) {
-            return JSONMap.error("模块名不能为空");
+            return error("模块名不能为空");
         }
 
         if(Valid.isEmpty(apiRootAddress)) {
-            return JSONMap.error("接口根地址不能为空");
+            return error("接口根地址不能为空");
         }
 
         if(Valid.isEmpty(primaryKeyColumnName)) {
-            return JSONMap.error("主键字段名不能为空");
+            return error("主键字段名不能为空");
         }
 
         if(columnInfoList.size() < 1) {
-            return JSONMap.error("没有一个字段信息");
+            return error("没有一个字段信息");
         }
 
         String tableDesc2 = tableDesc.substring(0, tableDesc.length() - 1);
@@ -142,13 +142,13 @@ public class SysCodeGenerationApi {
         boolean isEditable = false;//是否可以编辑
 
         //获取列表
-        String javaApiGetListRequestParamCode = "       String " + primaryKeyColumnSmallHump + " = Http.param(\"" + primaryKeyColumnName + "\");\n";//请求参数
+        String javaApiGetListRequestParamCode = "       String " + primaryKeyColumnSmallHump + " = param(\"" + primaryKeyColumnName + "\");\n";//请求参数
         String javaApiGetListSelectSqlCode = "";//select后面的字段SQL
         String javaApiGetListWhereSqlCode = "                .or().add(\"" + primaryKeyColumnName + "\", " + primaryKeyColumnSmallHump + ", Where.Operator.EQ)\n";//where条件
         String javaApiGetListOrderBySqlSwitchCode = "";//排序字段
         String javaApiSwitchParam = "";
         //修改
-        String javaApiUpdateRequestParamCode = "        String " + primaryKeyColumnSmallHump + " = Http.param(\"" + primaryKeyColumnName + "\");\n";//请求参数
+        String javaApiUpdateRequestParamCode = "        String " + primaryKeyColumnSmallHump + " = param(\"" + primaryKeyColumnName + "\");\n";//请求参数
         String javaApiUpdateValidPrimaryKeyNotNullCode = "";//验证主键非空
         String javaApiUpdateValidNotNullCode = "";//验证非空
         String javaApiUpdateSetSqlCode = "";//update set后面的SQL
@@ -176,7 +176,7 @@ public class SysCodeGenerationApi {
             if("1".equals(columnInfo.get("search"))) {
                 //不为主键时候
                 if(!primaryKeyColumnName.equals(columnUnderLine)) {
-                    javaApiGetListRequestParamCode += "       String " + columnSmallHump + " = Http.param(\"" + columnUnderLine + "\");\n";
+                    javaApiGetListRequestParamCode += "       String " + columnSmallHump + " = param(\"" + columnUnderLine + "\");\n";
                     javaApiGetListWhereSqlCode += "                .or().add(\"" + columnUnderLine + "\", " + columnSmallHump + ", relationship)\n";
                     htmlMenuSearchCode += "                <a-select-option value=\"" + columnUnderLine + "\">" + columnTitle + "</a-select-option>\n";
                 }
@@ -192,10 +192,10 @@ public class SysCodeGenerationApi {
 
             if(isEditable) {
                 if(primaryKeyColumnName.equals(columnUnderLine)) {
-                    return JSONMap.error("主键不允许编辑");
+                    return error("主键不允许编辑");
                 }
 
-                javaApiUpdateRequestParamCode += "        String " + columnSmallHump + " = Http.param(\"" + columnUnderLine + "\");\n";
+                javaApiUpdateRequestParamCode += "        String " + columnSmallHump + " = param(\"" + columnUnderLine + "\");\n";
                 javaApiUpdateSetSqlCode += columnUnderLine + " = '\" + DB.e(" + columnSmallHump + ") + \"',";
                 javaApiUpdateAddFieldSqlCode += columnUnderLine + ",";
                 javaApiUpdateAddValueSqlCode += "'\"+DB.e(" + columnSmallHump + ")+\"',";
@@ -258,24 +258,24 @@ public class SysCodeGenerationApi {
             //必填
             if(primaryKeyColumnName.equals(columnUnderLine)) {
                 if("1".equals(columnInfo.get("not_null"))) {
-                    return JSONMap.error("只有可以编辑的字段才可设为必填");
+                    return error("只有可以编辑的字段才可设为必填");
                 }
 
                 javaApiUpdateValidPrimaryKeyNotNullCode += "" +
                         "                if(" + columnSmallHump + ".isEmpty()) {\n" +
-                        "                    return JSONMap.error(\"" + columnTitle + "不能为空\");\n" +
+                        "                    return error(\"" + columnTitle + "不能为空\");\n" +
                         "                }\n" +
                         "\n";
                 primaryKeyColumnDesc = columnTitle;
                 primaryKeyIsNotNull = true;
             } else if("1".equals(columnInfo.get("not_null"))) {
                 if(!isEditable) {
-                    return JSONMap.error("只有可以编辑的字段才可设为必填");
+                    return error("只有可以编辑的字段才可设为必填");
                 }
 
                 javaApiUpdateValidNotNullCode += "" +
                         "                if(" + columnSmallHump + ".isEmpty()) {\n" +
-                        "                    return JSONMap.error(\"" + columnTitle + "不能为空\");\n" +
+                        "                    return error(\"" + columnTitle + "不能为空\");\n" +
                         "                }\n" +
                         "\n";
 
@@ -305,25 +305,25 @@ public class SysCodeGenerationApi {
         }
 
         if(javaApiGetListSelectSqlCode.isEmpty()) {
-            return JSONMap.error("select至少需要选择一个字段");
+            return error("select至少需要选择一个字段");
         }
 
         if(!primaryKeyIsSelect) {
-            return JSONMap.error("主键必须选择select");
+            return error("主键必须选择select");
         }
 
         if(!primaryKeyIsNotNull) {
-            return JSONMap.error("主键必须设为必填");
+            return error("主键必须设为必填");
         }
 
         if(javaApiUpdateSetSqlCode.isEmpty() || javaApiUpdateAddFieldSqlCode.isEmpty() || javaApiUpdateAddValueSqlCode.isEmpty()) {
-            return JSONMap.error("编辑至少需要选择一个字段");
+            return error("编辑至少需要选择一个字段");
         }
 
         javaApiGetListWhereSqlCode = "" +
                 "       Where.Operator relationship = Where.Operator.LIKE;\n" +
                 "\n" +
-                "        if(\"1\".equals(Http.param(\"IsEqual\",\"0\"))) {\n" +
+                "        if(\"1\".equals(param(\"IsEqual\",\"0\"))) {\n" +
                 "            relationship = Where.Operator.EQ;\n" +
                 "        }\n" +
                 "\n" +
@@ -368,22 +368,22 @@ public class SysCodeGenerationApi {
                 "    @GetMapping(\"" + apiRootAddress + "get" + moduleNameBigHump + "List\")\n" +
                 "    public JSONMap get" + moduleNameBigHump + "List() {\n" +
                 javaApiGetListRequestParamCode +
-                "       String sortField = Http.param(\"SortField\");\n" +
-                "       String sortOrder = Http.param(\"SortOrder\");" +
+                "       String sortField = param(\"SortField\");\n" +
+                "       String sortOrder = param(\"SortOrder\");" +
                 "\n" +
                 "       String sql = \"\" +\n" +
                 "                \"select " + javaApiGetListSelectSqlCode + " \" +\n" +
                 "                \"from " + tableName + " \";\n" +
                 javaApiGetListWhereSqlCode +
                 javaApiGetListOrderBySqlSwitchCode +
-                "        return DB.sqlToJSONMap(sql,Http.param(\"PageNo\"),Http.param(\"PageCount\"),\"100\");\n" +
+                "        return DB.sqlToJSONMap(sql,param(\"PageNo\"),param(\"PageCount\"),\"100\");\n" +
                 "    }\n" +
                 "    /**\n" +
                 "     * 修改" + tableDesc2 + "\n" +
                 "     */\n" +
                 "    @PostMapping(\"" + apiRootAddress + "update" + moduleNameBigHump + "\")\n" +
                 "    public JSONMap update" + moduleNameBigHump + "() {\n" +
-                "        String updateType = Http.param(\"UpdateType\");\n" +
+                "        String updateType = param(\"UpdateType\");\n" +
                 javaApiUpdateRequestParamCode +
                 "\n" +
                 javaApiSwitchParam +
@@ -391,7 +391,7 @@ public class SysCodeGenerationApi {
                 "        switch(updateType) {\n" +
                 "            case \"Edit\":\n" +
                 "//                if(!ApiGlobalInterceptor.permission(\"{$按照实际情况更换$}\")) {\n" +
-                "//                    Http.write(403,JSONMap.error(\"接口执行失败，该用户没有权限\"));\n" +
+                "//                    write(403,error(\"接口执行失败，该用户没有权限\"));\n" +
                 "//                    return null;\n" +
                 "//                }\n" +
                 "\n" +
@@ -403,12 +403,12 @@ public class SysCodeGenerationApi {
                 "                        \"where " + primaryKeyColumnName + " = '\"+DB.e(" + primaryKeyColumnSmallHump + ")+\"'\";\n" +
                 "\n" +
                 "                if(DB.update(sql) > 0) {\n" +
-                "                    return JSONMap.success();\n" +
+                "                    return success();\n" +
                 "                }\n" +
                 "                break;\n" +
                 "            case \"Add\":\n" +
                 "//                if(!ApiGlobalInterceptor.permission(\"{$按照实际情况更换$}\")) {\n" +
-                "//                    Http.write(403,JSONMap.error(\"接口执行失败，该用户没有权限\"));\n" +
+                "//                    write(403,error(\"接口执行失败，该用户没有权限\"));\n" +
                 "//                    return null;\n" +
                 "//                }\n" +
                 "\n" +
@@ -417,26 +417,26 @@ public class SysCodeGenerationApi {
                 "                        \"insert into " + tableName + "(" + javaApiUpdateAddFieldSqlCode + ")\" +\n" +
                 "                        \"value(" + javaApiUpdateAddValueSqlCode + ")\";\n" +
                 "\n" +
-                "                if(DB.update(sql) > 0) return JSONMap.success();\n" +
+                "                if(DB.update(sql) > 0) return success();\n" +
                 "                break;\n" +
                 "            case \"Delete\":\n" +
                 "//                if(!ApiGlobalInterceptor.permission(\"{$按照实际情况更换$}\")) {\n" +
-                "//                    Http.write(403,JSONMap.error(\"接口执行失败，该用户没有权限\"));\n" +
+                "//                    write(403,error(\"接口执行失败，该用户没有权限\"));\n" +
                 "//                    return null;\n" +
                 "//                }\n" +
                 "\n" +
                 "                if(" + primaryKeyColumnSmallHump + ".isEmpty()) {\n" +
-                "                    return JSONMap.error(\"" + primaryKeyColumnDesc + "不能为空\");\n" +
+                "                    return error(\"" + primaryKeyColumnDesc + "不能为空\");\n" +
                 "                }\n" +
                 "\n" +
                 "                if(DB.update(\"delete from " + tableName + " where " + primaryKeyColumnName + " = '\"+DB.e(" + primaryKeyColumnSmallHump + ")+\"'\") > 0) {\n" +
-                "                    return JSONMap.success();\n" +
+                "                    return success();\n" +
                 "                }\n" +
                 "                break;\n" +
                 "            default:\n" +
-                "                return JSONMap.error(\"修改类型有误\");\n" +
+                "                return error(\"修改类型有误\");\n" +
                 "        }\n" +
-                "        return JSONMap.error(\"操作失败\");\n" +
+                "        return error(\"操作失败\");\n" +
                 "    }\n" +
                 "}\n";
 
@@ -798,6 +798,6 @@ public class SysCodeGenerationApi {
         result.add(htmlMenu);
         result.add(jsMenu);
         result.add(htmlMenuEdit);
-        return JSONMap.success(result);
+        return success(result);
     }
 }

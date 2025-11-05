@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 菜单模块
  */
 @RestController
-public class SysMenuApi {
+public class SysMenuApi extends Http {
     /**
      * 获取菜单tree
      */
@@ -45,7 +45,7 @@ public class SysMenuApi {
         JSONList menus = DB.query(sql);
         menus = menus.listToTree("menu_id","parent_menu_id","child_menu",
                 false,true,false);
-        return JSONMap.success(menus);
+        return success(menus);
     }
     /**
      * 获取菜单列表
@@ -53,20 +53,20 @@ public class SysMenuApi {
     @GetMapping("/system/api/menu/getMenuList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:menu:list")
     public JSONMap getMenuList() {
-        String menuId = Http.param("menu_id");
-        String menuName = Http.param("menu_name");
-        String parentMenuId = Http.param("parent_menu_id");
-        String parentMenuName = Http.param("parent_menu_name");
-        String typeArr = Http.param("type_arr");
-        String isShow = Http.param("is_show");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
+        String menuId = param("menu_id");
+        String menuName = param("menu_name");
+        String parentMenuId = param("parent_menu_id");
+        String parentMenuName = param("parent_menu_name");
+        String typeArr = param("type_arr");
+        String isShow = param("is_show");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
 
         //验证type参数
         if(!typeArr.isEmpty()) {
             String[] typeArrSplit = typeArr.split(",");
             for(String type:typeArrSplit) {
-                if(!Valid.isIntType(type)) return JSONMap.error("获取菜单列表失败，type参数不正确");
+                if(!Valid.isIntType(type)) return error("获取菜单列表失败，type参数不正确");
             }
         }
 
@@ -79,7 +79,7 @@ public class SysMenuApi {
                 "   left join sys_user d on a.ls_update_by = d.user_id ";
 //        String relationship = SQLWhere.Like;
 //
-//        if("1".equals(Http.param("IsEqual","0"))) {
+//        if("1".equals(param("IsEqual","0"))) {
 //            relationship = SQLWhere.Equal;
 //        }
 //
@@ -92,7 +92,7 @@ public class SysMenuApi {
 
         Where.Operator relationship = Where.Operator.LIKE;
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             relationship = Where.Operator.EQ;
         }
 
@@ -118,7 +118,7 @@ public class SysMenuApi {
             default:
                 sql += " order by a.sort desc ";
         }
-        return DB.sqlToJSONMap(sql,Http.param("PageNo"),Http.param("PageCount"));
+        return DB.sqlToJSONMap(sql,param("PageNo"),param("PageCount"));
     }
     /**
      * 修改菜单
@@ -127,40 +127,40 @@ public class SysMenuApi {
     @LoginToken(validBackend = true)
 //    @CacheEvict(cacheNames = "SpringCache_system_menu",key = "'MenuTree'")//修改菜单后会删除getMenuTree接口返回值的缓存
     public JSONMap updateMenu() {
-        String updateType = Http.param("UpdateType");
-        String menuId = Http.param("menu_id");
-        String menuName = Http.param("menu_name");
-        String parentMenuId = Http.param("parent_menu_id");
-        String menuIcon = Http.param("menu_icon");
-        String url = Http.param("url");
-        String type = Http.param("type");
-        String permissionKey = Http.param("permission_key");
-        String isShow = Http.param("is_show");
-        String memo = Http.param("memo");
-        String newSort = Http.param("new_sort");
+        String updateType = param("UpdateType");
+        String menuId = param("menu_id");
+        String menuName = param("menu_name");
+        String parentMenuId = param("parent_menu_id");
+        String menuIcon = param("menu_icon");
+        String url = param("url");
+        String type = param("type");
+        String permissionKey = param("permission_key");
+        String isShow = param("is_show");
+        String memo = param("memo");
+        String newSort = param("new_sort");
         String backendLoginId = SysUser.getBackendLoginId();
 
         switch(updateType) {
             case "Edit":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:menu:edit")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(menuId.isEmpty()) {
-                    return JSONMap.error("菜单代码不能为空");
+                    return error("菜单代码不能为空");
                 }
 
                 if(menuName.isEmpty()) {
-                    return JSONMap.error("菜单名称不能为空");
+                    return error("菜单名称不能为空");
                 }
 
                 if(!"0".equals(isShow) && !"1".equals(isShow)) {
-                    return JSONMap.error("是否显示参数类型有误");
+                    return error("是否显示参数类型有误");
                 }
 
                 if(!Valid.isIntType(type)) {
-                    return JSONMap.error("类型参数类型有误");
+                    return error("类型参数类型有误");
                 }
 
                 String sql = "" +
@@ -171,25 +171,25 @@ public class SysMenuApi {
                         "where menu_id = '"+DB.e(menuId)+"'";
 
                 if(DB.update(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Add":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:menu:add")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(menuName.isEmpty()) {
-                    return JSONMap.error("菜单名称不能为空");
+                    return error("菜单名称不能为空");
                 }
 
                 if(!"0".equals(isShow) && !"1".equals(isShow)) {
-                    return JSONMap.error("是否显示参数类型有误");
+                    return error("是否显示参数类型有误");
                 }
 
                 if(!Valid.isIntType(type)) {
-                    return JSONMap.error("类型参数类型有误");
+                    return error("类型参数类型有误");
                 }
 
                 sql = "" +
@@ -201,48 +201,48 @@ public class SysMenuApi {
                         "update sys_menu set sort = @new_menu_id where menu_id = @new_menu_id;";
                 JSONList result = DB.execute(sql);
 
-                if(result != null) return JSONMap.success(result.getList(1).get(0));
-//                if(DB.updateTransaction(sql) > 0) return JSONMap.success();
+                if(result != null) return success(result.getList(1).get(0));
+//                if(DB.updateTransaction(sql) > 0) return success();
                 break;
             case "Delete":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:menu:delete")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(menuId.isEmpty()) {
-                    return JSONMap.error("菜单代码不能为空");
+                    return error("菜单代码不能为空");
                 }
 
                 if(DB.update("delete from sys_menu where menu_id = '"+DB.e(menuId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Sort":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:menu:edit:sort")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 synchronized(this) {
                     if(menuId.isEmpty()) {
-                        return JSONMap.error("菜单代码不能为空");
+                        return error("菜单代码不能为空");
                     }
 
                     if(newSort.isEmpty()) {
-                        return JSONMap.error("新排序不能为空");
+                        return error("新排序不能为空");
                     }
 
                     return SysCommon.updateSort("sys_menu","menu_id",menuId,newSort);
                 }
             case "IsShow":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:menu:edit:isShow")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(menuId.isEmpty()) {
-                    return JSONMap.error("菜单代码不能为空");
+                    return error("菜单代码不能为空");
                 }
 
                 if("1".equals(isShow)) {
@@ -255,12 +255,12 @@ public class SysMenuApi {
                         "update sys_menu " +
                         "set is_show = "+isShow+", ls_update_time = now(), ls_update_by = '" + backendLoginId + "' " +
                         "where menu_id = '"+DB.e(menuId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 }

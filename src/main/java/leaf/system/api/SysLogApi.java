@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.File;
 
 @RestController
-public class SysLogApi {
+public class SysLogApi extends Http {
     /**
      * 获取日志
      */
@@ -25,7 +25,7 @@ public class SysLogApi {
 
         //判断文件夹是否存在
         if(!logDir.exists()) {
-            return JSONMap.error("获取日志失败，文件夹不存在：" + Log.logPath + "/log/");
+            return error("获取日志失败，文件夹不存在：" + Log.logPath + "/log/");
         }
 
         JSONList years = new JSONList();
@@ -42,7 +42,7 @@ public class SysLogApi {
         File[] logFiles;
 
         if(yearDirs == null) {
-            return JSONMap.success(years);
+            return success(years);
         }
 
         //获取所有年文件夹
@@ -109,7 +109,7 @@ public class SysLogApi {
             }
         }
 
-        return JSONMap.success(years);
+        return success(years);
     }
     /**
      * 修改日志
@@ -117,11 +117,11 @@ public class SysLogApi {
     @PostMapping("/system/api/log/updateLog")
     @LoginToken(validBackend = true)
     public JSONMap updateLog() {
-        String updateType = Http.param("UpdateType");
-        String logUrl = Http.param("log_url");
+        String updateType = param("UpdateType");
+        String logUrl = param("log_url");
 
         if(logUrl.isEmpty()) {
-            return JSONMap.error("请选择文件");
+            return error("请选择文件");
         }
 
         File file = new File(Log.logPath + logUrl);
@@ -129,38 +129,38 @@ public class SysLogApi {
         switch(updateType) {
             case "Rename":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:log:rename")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
-                String newName = Http.param("new_name");
+                String newName = param("new_name");
 
                 if(newName.isEmpty()) {
-                    return JSONMap.error("请填写新文件名");
+                    return error("请填写新文件名");
                 }
 
                 String logNewUrl = getFileDirByFilePath(logUrl) + newName + ".log";
 
                 if(file.renameTo(new File(Log.logPath + logNewUrl))) {
-                    JSONMap result = JSONMap.success();
+                    JSONMap result = success();
                     result.put("log_new_url",logNewUrl);
                     return result;
                 }
                 break;
             case "Delete":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:log:delete")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(file.delete()) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
     /**
      * 通过文件路径获取文件目录

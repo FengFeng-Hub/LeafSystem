@@ -23,7 +23,7 @@ import com.sun.management.OperatingSystemMXBean;
  * 服务器模块
  */
 @RestController
-public class SysServerAPI {
+public class SysServerAPI extends Http {
 
     // 获取 OperatingSystemMXBean 实例
     OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
@@ -35,7 +35,7 @@ public class SysServerAPI {
     @GetMapping("/system/api/server/getServerInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:server:serverInfo")
     public JSONMap getServerInfo() {
-        String isRepeatRequest = Http.param("IsRepeatRequest");
+        String isRepeatRequest = param("IsRepeatRequest");
         JSONMap result = new JSONMap();
         JSONMap serverInfo = new JSONMap();
         JSONMap javaVMInfo = new JSONMap();
@@ -79,7 +79,7 @@ public class SysServerAPI {
             try {
                 localHost = InetAddress.getLocalHost();
             } catch(UnknownHostException e) {
-                return JSONMap.error("获取服务器信息失败");
+                return error("获取服务器信息失败");
             }
 
             serverInfo.put("server_name",localHost.getHostName());//服务名称
@@ -108,7 +108,7 @@ public class SysServerAPI {
                 try {
                     type = Files.getFileStore(Paths.get(path)).type();
                 } catch(IOException e) {
-                    return JSONMap.error("获取磁盘文件系统失败");
+                    return error("获取磁盘文件系统失败");
                 }
 
                 diskInfo.put("disk_path",path);//盘符路径
@@ -126,7 +126,7 @@ public class SysServerAPI {
         result.put("cpu_info",cpuInfo);
         result.put("memory_info",memoryInfo);
         result.put("disk_info_list",diskInfoList);
-        return JSONMap.success(result);
+        return success(result);
     }
     /**
      * 获取缓存信息
@@ -134,7 +134,7 @@ public class SysServerAPI {
     @GetMapping("/system/api/server/getCacheInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:server:cacheInfo")
     public JSONMap getCacheInfo() {
-        return JSONMap.success(Cache.entrySet());
+        return success(Cache.entrySet());
     }
     /**
      * 删除缓存
@@ -143,11 +143,11 @@ public class SysServerAPI {
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:server:deleteCache")
     public JSONMap deleteCache() {
 
-        if("1".equals(Http.param("IsDeleteAll"))) {
+        if("1".equals(param("IsDeleteAll"))) {
             Cache.clear();
         } else {
-            Cache.remove(Http.param("cache_key"));
+            Cache.remove(param("cache_key"));
         }
-        return JSONMap.success("删除成功");
+        return success("删除成功");
     }
 }

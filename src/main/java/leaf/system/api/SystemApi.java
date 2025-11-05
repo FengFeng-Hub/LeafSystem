@@ -23,7 +23,7 @@ import java.util.Random;
  * 系统模块
  */
 @RestController
-public class SystemApi {
+public class SystemApi extends Http {
     @Autowired
     private Environment environment;
 
@@ -32,11 +32,11 @@ public class SystemApi {
      */
     @PostMapping("/system/api/upload")
     public JSONMap upload() {
-        Part file = Http.part("File");
-        String isOldName = Http.param("IsOldName","0");
+        Part file = part("File");
+        String isOldName = param("IsOldName","0");
 
         if(file == null) {
-            return JSONMap.error("请选择需要上传的文件");
+            return error("请选择需要上传的文件");
         }
 
         String filename = file.getSubmittedFileName();
@@ -44,7 +44,7 @@ public class SystemApi {
         System.out.println(filename);
 
         if(filename == null) {
-            return JSONMap.error("请选择需要上传的文件");
+            return error("请选择需要上传的文件");
         }
 
         //获取允许上传文件大小和允许上传文件的后缀
@@ -54,7 +54,7 @@ public class SystemApi {
 
         if(size != null && size.compareTo(BigDecimal.valueOf(-1)) != 0) {
             if(size.compareTo(new BigDecimal(file.getSize())) == -1) {
-                return JSONMap.error("上传文件大小超出指定范围");
+                return error("上传文件大小超出指定范围");
             }
         }
 
@@ -67,7 +67,7 @@ public class SystemApi {
             }
 
             if(!flag) {
-                return JSONMap.error("服务器不允许上传该类型的文件");
+                return error("服务器不允许上传该类型的文件");
             }
         }
 
@@ -86,23 +86,23 @@ public class SystemApi {
             file.write(path);
         } catch (IOException e) {
             Log.write("Error_system",Log.getException(e));
-            return JSONMap.error("上传失败");
+            return error("上传失败");
         }
 
-        return JSONMap.success("/"+filepath);
+        return success("/"+filepath);
     }
     /**
      * 获取验证码
      */
     @GetMapping("/system/api/getValidCode")
     public JSONMap getValidCode() {
-        String length = Http.param("Length", "4");
+        String length = param("Length", "4");
         int _length;
 
         try {
             _length = Integer.parseInt(length);
         } catch(Exception e) {
-            return JSONMap.error("长度必须为整数");
+            return error("长度必须为整数");
         }
 
         JSONMap validCode = ValidRobot.getValidCode(_length);
@@ -121,27 +121,27 @@ public class SystemApi {
 
         validCode.remove("text");
         validCode.put("valid_param",Lock.aesEncrypt(validParam));
-        return JSONMap.success(validCode);
+        return success(validCode);
     }
     /**
      * 检查验证码
      */
     @GetMapping("/system/api/checkValidCode")
     public JSONMap validPuzzleCode() {
-        String validParam = Http.param("ValidParam");
-        String text = Http.param("Text");
+        String validParam = param("ValidParam");
+        String text = param("Text");
         int result = SysCommon.checkValidCode(validParam,text);
 
         switch(result) {
             case 1:
-                return JSONMap.success();
+                return success();
             case 2:
-                return JSONMap.error("验证失败");
+                return error("验证失败");
             case 3:
-                return JSONMap.error("验证超时，请刷新验证码后重新验证");
+                return error("验证超时，请刷新验证码后重新验证");
         }
 
-        return JSONMap.error("验证失败");
+        return error("验证失败");
     }
     /**
      * 获取拼图验证
@@ -153,14 +153,14 @@ public class SystemApi {
         String[] list = file.list();
 
         if(!file.exists() || list == null || list.length < 1) {
-            return JSONMap.error("获取验证拼图图片失败");
+            return error("获取验证拼图图片失败");
         }
 
         Random rdm = new Random();
         JSONMap puzzleValid = ValidRobot.getValidPuzzle(puzzleValidImgPath + (rdm.nextInt(list.length) + 1) + ".png");
 
         if(puzzleValid == null) {
-            return JSONMap.error("获取验证拼图图片失败");
+            return error("获取验证拼图图片失败");
         }
 
         String validParam = "lyfsys_validPuzzle_"+puzzleValid.get("x")+"_"+DateTime.now("yyyyMMddHHmmssSSS")+"_"+ Rdm.str(10, StrUtil.Char);
@@ -178,21 +178,21 @@ public class SystemApi {
 
         puzzleValid.remove("x");
         puzzleValid.put("valid_param",Lock.aesEncrypt(validParam));
-        return JSONMap.success(puzzleValid);
+        return success(puzzleValid);
     }
     /**
      * 检查验证拼图
      */
     @GetMapping("/system/api/checkValidPuzzle")
     public JSONMap validPuzzleValid() {
-        String validParam = Http.param("ValidParam");
-        String x = Http.param("X");
+        String validParam = param("ValidParam");
+        String x = param("X");
         int _x = 0;
 
         try {
             _x = Integer.parseInt(x);
         } catch(Exception e) {
-            return JSONMap.error("验证失败");
+            return error("验证失败");
         }
 
         Log.write("12", environment.getProperty("leaf.validPuzzle.range"));
@@ -200,13 +200,13 @@ public class SystemApi {
 
         switch(result) {
             case 1:
-                return JSONMap.success();
+                return success();
             case 2:
-                return JSONMap.error("验证失败");
+                return error("验证失败");
             case 3:
-                return JSONMap.error("验证超时，请刷新验证码后重新验证");
+                return error("验证超时，请刷新验证码后重新验证");
         }
 
-        return JSONMap.error("验证失败");
+        return error("验证失败");
     }
 }

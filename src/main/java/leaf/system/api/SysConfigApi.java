@@ -17,18 +17,18 @@ import org.springframework.web.bind.annotation.RestController;
  * 系统配置模块
  */
 @RestController
-public class SysConfigApi {
+public class SysConfigApi extends Http {
     /**
      * 获取系统配置
      */
     @GetMapping("/system/api/systemConfig/getSystemConfig")
     public JSONMap getSystemConfig() {
-        String configKeys = Http.param("ConfigKeys");
+        String configKeys = param("ConfigKeys");
         JSONMap result = new JSONMap();
         int i;
 
         if(Valid.isEmpty(configKeys)) {
-            return JSONMap.success(result);
+            return success(result);
         }
 
         String[] configKeyArr = configKeys.split(",");
@@ -61,14 +61,14 @@ public class SysConfigApi {
         JSONList configs = DB.query(sql);
 
         if(configs == null) {
-            return JSONMap.error("获取系统配置失败");
+            return error("获取系统配置失败");
         }
 
         for(i = 0;i < configs.size();i++) {
             result.put(configs.getMap(i).getString("config_key"),configs.getMap(i).getString("config_value"));
         }
 
-        return JSONMap.success(result);
+        return success(result);
     }
     /**
      * 获取系统配置列表
@@ -76,16 +76,16 @@ public class SysConfigApi {
     @GetMapping("/system/api/systemConfig/getSystemConfigList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:systemConfig:list")
     public JSONMap getSystemConfigList() {
-        String configId = Http.param("config_id");
-        String configKey = Http.param("config_key");
-        String configValue = Http.param("config_value");
-        String configDesc = Http.param("config_desc");
-        String configType = Http.param("config_type");
-        String accessLevel = Http.param("access_level");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
-        String pageNo = Http.param("PageNo");
-        String pageCount = Http.param("PageCount");
+        String configId = param("config_id");
+        String configKey = param("config_key");
+        String configValue = param("config_value");
+        String configDesc = param("config_desc");
+        String configType = param("config_type");
+        String accessLevel = param("access_level");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
+        String pageNo = param("PageNo");
+        String pageCount = param("PageCount");
 
 //        String sql = "" +
 //                "select a.config_id,config_key,config_value,config_desc,config_type,a.access_level,a.memo," +
@@ -116,7 +116,7 @@ public class SysConfigApi {
 
         Where.Operator relationship = Where.Operator.LIKE;
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             relationship =  Where.Operator.EQ;
         }
         sql += new Where(true)
@@ -139,7 +139,7 @@ public class SysConfigApi {
                 sql += " order by a.config_id desc ";
         }
 
-        return DB.sqlToJSONMap(sql,Http.param("PageNo"),Http.param("PageCount"));
+        return DB.sqlToJSONMap(sql,param("PageNo"),param("PageCount"));
     }
     /**
      * 修改系统配置列表
@@ -147,31 +147,31 @@ public class SysConfigApi {
     @PostMapping("/system/api/systemConfig/updateSystemConfig")
     @LoginToken(validBackend = true)
     public JSONMap updateSystemConfig() {
-        String updateType = Http.param("UpdateType");
-        String configId = Http.param("config_id");
-        String configKey = Http.param("config_key");
-        String configValue = Http.param("config_value");
-        String configDesc = Http.param("config_desc");
-        String configType = Http.param("config_type");
-        String accessLevel = Http.param("access_level");
-        String memo = Http.param("memo");
-        String roleIds = Http.param("role_id_arr");
+        String updateType = param("UpdateType");
+        String configId = param("config_id");
+        String configKey = param("config_key");
+        String configValue = param("config_value");
+        String configDesc = param("config_desc");
+        String configType = param("config_type");
+        String accessLevel = param("access_level");
+        String memo = param("memo");
+        String roleIds = param("role_id_arr");
         String[] roleIdArr = roleIds.split(",");
         String backendLoginId = SysUser.getBackendLoginId();
 
         switch(updateType) {
             case "Edit":
                 if (!ApiGlobalInterceptor.permission("lspk:ls:systemConfig:edit")) {
-                    Http.write(403, JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403, error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if (configId.isEmpty()) {
-                    return JSONMap.error("配置代码不能为空");
+                    return error("配置代码不能为空");
                 }
 
                 if (configKey.isEmpty()) {
-                    return JSONMap.error("配置键不能为空");
+                    return error("配置键不能为空");
                 }
 
                 switch (configType) {
@@ -183,7 +183,7 @@ public class SysConfigApi {
                     case "6":
                         break;
                     default:
-                        return JSONMap.error("配置类型有误");
+                        return error("配置类型有误");
                 }
 
                 switch (accessLevel) {
@@ -193,7 +193,7 @@ public class SysConfigApi {
                     case "4":
                         break;
                     default:
-                        return JSONMap.error("访问等级类型有误");
+                        return error("访问等级类型有误");
                 }
 
                 configId = DB.e(configId);
@@ -210,17 +210,17 @@ public class SysConfigApi {
                 }
 
                 if (DB.updateTransaction(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Add":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:systemConfig:add")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if (configKey.isEmpty()) {
-                    return JSONMap.error("配置键不能为空");
+                    return error("配置键不能为空");
                 }
 
                 switch (configType) {
@@ -232,7 +232,7 @@ public class SysConfigApi {
                     case "6":
                         break;
                     default:
-                        return JSONMap.error("配置类型有误");
+                        return error("配置类型有误");
                 }
 
 
@@ -243,7 +243,7 @@ public class SysConfigApi {
                     case "4":
                         break;
                     default:
-                        return JSONMap.error("访问等级类型有误");
+                        return error("访问等级类型有误");
                 }
 
                 sql = "" +
@@ -257,26 +257,26 @@ public class SysConfigApi {
                 }
 
                 if(DB.updateTransaction(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Delete":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:systemConfig:delete")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if (configKey.isEmpty()) {
-                    return JSONMap.error("配置键不能为空");
+                    return error("配置键不能为空");
                 }
 
                 if(DB.update("delete from sys_config where config_id = '"+DB.e(configId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 }

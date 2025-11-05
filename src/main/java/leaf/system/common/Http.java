@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import leaf.common.Log;
 import leaf.common.net.Servlet;
+import leaf.common.object.JSONMap;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,7 +17,7 @@ import java.util.Map;
 /**
  * http协议
  */
-public class Http {
+public class Http extends JSONMap {
     /**
      * 响应写入
      * @param status 响应状态码

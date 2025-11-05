@@ -18,22 +18,22 @@ import org.springframework.web.bind.annotation.RestController;
  * 角色模块
  */
 @RestController
-public class SysRoleApi {
+public class SysRoleApi extends Http {
     /**
      * 获取角色列表
      */
     @GetMapping("/system/api/role/getRoleList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:role:list")
     public JSONMap getRoleList() {
-        String roleId = Http.param("role_id");
-        String roleName = Http.param("role_name");
-        String isAllow_login_backend = Http.param("is_allow_login_backend");
-        String isDisable = Http.param("is_disable");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
+        String roleId = param("role_id");
+        String roleName = param("role_name");
+        String isAllow_login_backend = param("is_allow_login_backend");
+        String isDisable = param("is_disable");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
 //        String relationship = SQLWhere.Like;
 //
-//        if("1".equals(Http.param("IsEqual","0"))) {
+//        if("1".equals(param("IsEqual","0"))) {
 //            relationship = SQLWhere.Equal;
 //        }
 //
@@ -48,7 +48,7 @@ public class SysRoleApi {
 
         Where.Operator relationship = Where.Operator.LIKE;
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             relationship = Where.Operator.EQ;
         }
 
@@ -77,22 +77,22 @@ public class SysRoleApi {
             default:
                 sql += " order by a.role_id desc ";
         }
-        return DB.sqlToJSONMap(sql,Http.param("PageNo"),Http.param("PageCount"),"100");
+        return DB.sqlToJSONMap(sql,param("PageNo"),param("PageCount"),"100");
     }
     /**
      * 修改角色
      */
     @PostMapping("/system/api/role/updateRole")
     public JSONMap updateRole() {
-        String updateType = Http.param("UpdateType");
-        String roleId = Http.param("role_id");
-        String roleName = Http.param("role_name");
-        String isAllowLoginBackend = Http.param("is_allow_login_backend");
-        String isDisable = Http.param("is_disable");
+        String updateType = param("UpdateType");
+        String roleId = param("role_id");
+        String roleName = param("role_name");
+        String isAllowLoginBackend = param("is_allow_login_backend");
+        String isDisable = param("is_disable");
         String backendLoginId = SysUser.getBackendLoginId();
 
         if("1".equals(roleId)) {
-            return JSONMap.error("没有权限操作该角色");
+            return error("没有权限操作该角色");
         }
 
         if("1".equals(isAllowLoginBackend)) {
@@ -110,16 +110,16 @@ public class SysRoleApi {
         switch(updateType) {
             case "Edit":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:role:edit")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(roleId.isEmpty()) {
-                    return JSONMap.error("角色代码不能为空");
+                    return error("角色代码不能为空");
                 }
 
                 if(roleName.isEmpty()) {
-                    return JSONMap.error("角色名称不能为空");
+                    return error("角色名称不能为空");
                 }
 
 
@@ -130,16 +130,16 @@ public class SysRoleApi {
                         "where role_id = '"+DB.e(roleId)+"'";
 
                 if(DB.update(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Add":
                 if(roleName.isEmpty()) {
-                    return JSONMap.error("角色名称不能为空");
+                    return error("角色名称不能为空");
                 }
 
                 if(!ApiGlobalInterceptor.permission("lspk:ls:role:add")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
@@ -148,61 +148,61 @@ public class SysRoleApi {
                         "value('"+DB.e(roleName)+"',"+isAllowLoginBackend+","+isDisable+",now(),'" + backendLoginId + "');";
 
                 if(DB.update(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Delete":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:role:delete")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(roleId.isEmpty()) {
-                    return JSONMap.error("角色代码不能为空");
+                    return error("角色代码不能为空");
                 }
 
                 if(DB.update("delete from sys_role where role_id = '"+DB.e(roleId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "IsAllowLoginBackend":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:role:edit:isAllowLoginBackend")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(roleId.isEmpty()) {
-                    return JSONMap.error("角色代码不能为空");
+                    return error("角色代码不能为空");
                 }
 
                 if(DB.update("" +
                         "update sys_role " +
                         "set is_allow_login_backend = "+isAllowLoginBackend+",ls_update_time = now(),ls_update_by = '" + backendLoginId + "' " +
                         "where role_id = '"+DB.e(roleId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "IsDisable":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:role:edit:isDisable")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(roleId.isEmpty()) {
-                    return JSONMap.error("角色代码不能为空");
+                    return error("角色代码不能为空");
                 }
 
                 if(DB.update("" +
                         "update sys_role " +
                         "set is_disable = "+isDisable+",ls_update_time = now(),ls_update_by = '" + backendLoginId + "' " +
                         "where role_id = '"+DB.e(roleId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
     /**
      * 获取角色菜单列表
@@ -210,11 +210,11 @@ public class SysRoleApi {
     @GetMapping("/system/api/role/getRoleMenuList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:role:menu:list")
     public JSONMap getRoleMenuList() {
-        String roleId = Http.param("role_id");
+        String roleId = param("role_id");
         String sql;
 
         if(Valid.isEmpty(roleId)) {
-            return JSONMap.error("角色代码不能为空");
+            return error("角色代码不能为空");
         }
 
         if("1".equals(roleId)) {
@@ -233,16 +233,16 @@ public class SysRoleApi {
     @PostMapping("/system/api/role/updateRoleMenu")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:role:menu:edit")
     public JSONMap updateRoleMenu() {
-        String roleId = Http.param("role_id");
-        String menuIds = Http.param("menu_id_arr");
+        String roleId = param("role_id");
+        String menuIds = param("menu_id_arr");
         String[] menuIdArr = menuIds.split(",");
 
         if(Valid.isEmpty(roleId)) {
-            return JSONMap.error("角色代码不能为空");
+            return error("角色代码不能为空");
         }
 
         if("1".equals(roleId)) {
-            return JSONMap.error("没有权限操作该角色");
+            return error("没有权限操作该角色");
         }
 
         roleId = DB.e(roleId);
@@ -253,18 +253,18 @@ public class SysRoleApi {
         }
 
         if(DB.updateTransaction(sql) != -1) {
-            return JSONMap.success();
+            return success();
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
     /**
      * 获取角色菜单权限键列表
      */
     @GetMapping("/system/api/role/getRoleMenuPermissionKeyList")
     public JSONMap getRoleMenuPermissionKeyList() {
-        String menuId = Http.param("menu_id");
-        String parentMenuId = Http.param("parent_menu_id");
-        String type = Http.param("type");
+        String menuId = param("menu_id");
+        String parentMenuId = param("parent_menu_id");
+        String type = param("type");
         String userRoleIdStr = SysUser.getUserRoleIdStr();
 
         if("1".equals(userRoleIdStr) || userRoleIdStr.startsWith("1,") || "1".equals(SysCommon.getSystemConfig("IsShowNoPermissionController"))) {
@@ -305,11 +305,11 @@ public class SysRoleApi {
     @GetMapping("/system/api/role/getRoleMenuTree")
     @LoginToken(validBackend = true)
     public JSONMap getRoleMenuTree() {
-        String roleId = Http.param("role_id");
+        String roleId = param("role_id");
         String sql;
 
         if(Valid.isEmpty(roleId)) {
-            return JSONMap.error("角色代码不能为空");
+            return error("角色代码不能为空");
         }
 
         if("1".equals(roleId)) {
@@ -323,6 +323,6 @@ public class SysRoleApi {
         JSONList menus = DB.query(sql);
         menus = menus.listToTree("menu_id","parent_menu_id","child_menu",
                 false,true,false);
-        return JSONMap.success(menus);
+        return success(menus);
     }
 }

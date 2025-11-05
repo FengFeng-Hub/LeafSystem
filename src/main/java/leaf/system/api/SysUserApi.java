@@ -29,7 +29,7 @@ import java.io.IOException;
  * 用户模块
  */
 @RestController
-public class SysUserApi {
+public class SysUserApi extends Http {
     @Autowired
     private Environment environment;
 
@@ -38,13 +38,13 @@ public class SysUserApi {
      */
     @PostMapping("/system/api/user/login")
     public JSONMap login() {
-        String account = Http.param("account");
-        String password = Http.param("password");
-        String isBackend = Http.param("IsBackend","0");
-        String isSaveLoginStatus = Http.param("IsSaveLoginStatus","0");
+        String account = param("account");
+        String password = param("password");
+        String isBackend = param("IsBackend","0");
+        String isSaveLoginStatus = param("IsSaveLoginStatus","0");
 
         if(account.isEmpty() || password.isEmpty()) {
-            return JSONMap.error("账号或密码不能为空");
+            return error("账号或密码不能为空");
         }
 
         password = SysUser.md5Pwd(password);
@@ -78,25 +78,25 @@ public class SysUserApi {
         JSONMap user = DB.queryFirst(sql);
 
         if(user == null) {
-            return JSONMap.error("登录失败，账号或密码错误");
+            return error("登录失败，账号或密码错误");
         }
 
         if("1".equals(user.get("is_disable")) || "1".equals(user.get("role_is_disable"))) {
-            return JSONMap.error("该用户已被禁用");
+            return error("该用户已被禁用");
         }
 
         //检查后台用户的验证码
         if(isBackend.equals("1") && "1".equals(SysCommon.getSystemConfig("EnableBackendLoginValid"))) {
-            int result = SysCommon.checkValidCode(Http.param("ValidParam"),Http.param("Text"));
+            int result = SysCommon.checkValidCode(param("ValidParam"),param("Text"));
 
             if(result == 2) {
-                return JSONMap.error("验证码有误");
+                return error("验证码有误");
             } else if(result == 3) {
-                return JSONMap.error("验证超时，请刷新验证码后重新验证");
+                return error("验证超时，请刷新验证码后重新验证");
             }
 
             if (!"1".equals(user.get("is_allow_login_backend"))) {
-                return JSONMap.error("该用户不允许登录后台");
+                return error("该用户不允许登录后台");
             }
         }
 
@@ -123,32 +123,32 @@ public class SysUserApi {
         //修改登录IP以及登录时间
         if(DB.update("" +
                 "update sys_user " +
-                "set login_ip = '"+Http.getIpAdrress()+"',login_time = '"+DateTime.now("yyyy-MM-dd HH:mm:ss")+"' " +
+                "set login_ip = '"+getIpAdrress()+"',login_time = '"+DateTime.now("yyyy-MM-dd HH:mm:ss")+"' " +
                 "where user_id = '"+userId+"'") == 0) {
             Log.write("Error_system","修改用户登录IP和用户登录时间失败，用户代码：" + userId);
         }
 
-        return JSONMap.success();
+        return success();
     }
     /**
      * 退出登录
      */
     @GetMapping("/system/api/user/logout")
     public JSONMap logout() {
-        if("1".equals(Http.param("IsBackend", "0"))) {
+        if("1".equals(param("IsBackend", "0"))) {
             SysUser.removeBackendLoginId();
         } else {
             SysUser.removeFrontendLoginId();
         }
 
-        return JSONMap.success();
+        return success();
     }
     /**
      * 是否登录
      */
     @GetMapping("/system/api/user/isLogin")
     public JSONMap isLogin() {
-        String isBackend = Http.param("IsBackend", "0");
+        String isBackend = param("IsBackend", "0");
         String userId;
 
         if("1".equals(isBackend)) {
@@ -165,7 +165,7 @@ public class SysUserApi {
                 "where a.user_id = '" + userId + "'");
 
         if(userAll == null || userAll.isEmpty()) {
-            return JSONMap.error("未登录");
+            return error("未登录");
         }
 
         JSONMap user = null;
@@ -189,7 +189,7 @@ public class SysUserApi {
 
         user.remove("role_id");
         user.remove("role_name");
-        return JSONMap.success(user);
+        return success(user);
     }
     /**
      * 获取用户列表(dataCont有问题)
@@ -198,17 +198,17 @@ public class SysUserApi {
 //    @LoginToken(validBackend = true,permissionKey = "PermissionKey-system_user_getUserList")
 //    @Deprecated
 //    public JSONMap getUserListDeprecated() {
-//        String userId = Http.param("user_id");
-//        String name = Http.param("name");
-//        String account = Http.param("account");
-//        String phone = Http.param("phone");
-//        String email = Http.param("email");
-//        String realName = Http.param("real_name");
-//        String idcard = Http.param("idcard");
-//        String sex = Http.param("sex");
-//        String isDisable = Http.param("is_disable");
-//        String loginIp = Http.param("login_ip");
-//        String roleIdArr = Http.param("role_id_arr");
+//        String userId = param("user_id");
+//        String name = param("name");
+//        String account = param("account");
+//        String phone = param("phone");
+//        String email = param("email");
+//        String realName = param("real_name");
+//        String idcard = param("idcard");
+//        String sex = param("sex");
+//        String isDisable = param("is_disable");
+//        String loginIp = param("login_ip");
+//        String roleIdArr = param("role_id_arr");
 //        String roleIdStr = "";
 //        String[] roleIdSplit = {};
 //
@@ -231,7 +231,7 @@ public class SysUserApi {
 //                "   left join sys_user_role_rel b on a.user_id = b.user_id ";
 //        String relationship = SQLWhere.Like;
 //
-//        if("1".equals(Http.param("IsEqual","0"))) {
+//        if("1".equals(param("IsEqual","0"))) {
 //            relationship = SQLWhere.Equal;
 //        }
 //
@@ -257,7 +257,7 @@ public class SysUserApi {
 //            sql += orderBySQL;
 //        }
 //
-//        JSONMap result = DB.sqlToJSONMap(sql, Http.param("PageNo"), Http.param("PageCount"),"100");
+//        JSONMap result = DB.sqlToJSONMap(sql, param("PageNo"), param("PageCount"),"100");
 //        JSONList resultData = result.getList("data");
 //        String userIdStr = "";
 //
@@ -300,21 +300,21 @@ public class SysUserApi {
     @GetMapping("/system/api/user/getUserList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:user:list")
     public JSONMap getUserList() {
-        String userId = Http.param("user_id");
-        String name = Http.param("name");
-        String account = Http.param("account");
-        String phone = Http.param("phone");
-        String email = Http.param("email");
-        String realName = Http.param("real_name");
-        String idcard = Http.param("idcard");
-        String sex = Http.param("sex");
-        String isDisable = Http.param("is_disable");
-        String loginIp = Http.param("login_ip");
-        String roleIdArr = Http.param("role_id_arr");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
-        String pageNo = Http.param("PageNo");
-        String pageCount = Http.param("PageCount");
+        String userId = param("user_id");
+        String name = param("name");
+        String account = param("account");
+        String phone = param("phone");
+        String email = param("email");
+        String realName = param("real_name");
+        String idcard = param("idcard");
+        String sex = param("sex");
+        String isDisable = param("is_disable");
+        String loginIp = param("login_ip");
+        String roleIdArr = param("role_id_arr");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
+        String pageNo = param("PageNo");
+        String pageCount = param("PageCount");
 
         if (!sex.isEmpty()) {
             sex = Where.joinIn(sex.split(","));
@@ -326,7 +326,7 @@ public class SysUserApi {
 
         Where.Operator relationship = Where.Operator.LIKE;
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             relationship = Where.Operator.EQ;
         }
 
@@ -433,10 +433,10 @@ public class SysUserApi {
         String count = DB.getQueryCount(masterListSql);
 
         if(count == null) {
-            return JSONMap.error("获取记录条数失败");
+            return error("获取记录条数失败");
         }
 
-        JSONMap result = JSONMap.success(userData);
+        JSONMap result = success(userData);
         result.put("dataCount",count);
         return result;
     }
@@ -447,45 +447,45 @@ public class SysUserApi {
     @PostMapping("/system/api/user/updateUser")
     @LoginToken(validBackend = true)
     public JSONMap updateUser() {
-        String updateType = Http.param("UpdateType");
-        String userId = Http.param("user_id");
-        String name = Http.param("name");
-        String account = Http.param("account");
-        String password = Http.param("password");
-        String personalSignature = Http.param("personal_signature");
-        String avatar = Http.param("avatar");
-        String birthday = Http.param("birthday");
-        String phone = Http.param("phone");
-        String email = Http.param("email");
-        String realName = Http.param("real_name");
-        String idcard = Http.param("idcard");
-        String sex = Http.param("sex", "3");
-        String isDisable = Http.param("is_disable");
-        String loginTime = Http.param("login_time");
-        String roleIds = Http.param("role_id_arr");
+        String updateType = param("UpdateType");
+        String userId = param("user_id");
+        String name = param("name");
+        String account = param("account");
+        String password = param("password");
+        String personalSignature = param("personal_signature");
+        String avatar = param("avatar");
+        String birthday = param("birthday");
+        String phone = param("phone");
+        String email = param("email");
+        String realName = param("real_name");
+        String idcard = param("idcard");
+        String sex = param("sex", "3");
+        String isDisable = param("is_disable");
+        String loginTime = param("login_time");
+        String roleIds = param("role_id_arr");
         String[] roleIdArr = roleIds.split(",");
 
         if("1".equals(userId)) {
-            return JSONMap.error("没有权限操作该用户");
+            return error("没有权限操作该用户");
         }
 
         switch(updateType) {
             case "Edit":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:edit")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(userId.isEmpty()) {
-                    return JSONMap.error("用户代码不能为空");
+                    return error("用户代码不能为空");
                 }
 
                 if(name.isEmpty()) {
-                    return JSONMap.error("名称不能为空");
+                    return error("名称不能为空");
                 }
 
                 if(account.isEmpty()) {
-                    return JSONMap.error("账号不能为空");
+                    return error("账号不能为空");
                 }
 
                 if (DateTime.strToDate(birthday,"yyyy-MM-dd") == null) {
@@ -524,25 +524,25 @@ public class SysUserApi {
                 }
 
                 if(DB.updateTransaction(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Add":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:add")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(name.isEmpty()) {
-                    return JSONMap.error("名称不能为空");
+                    return error("名称不能为空");
                 }
 
                 if(account.isEmpty()) {
-                    return JSONMap.error("账号不能为空");
+                    return error("账号不能为空");
                 }
 
                 if(password.isEmpty()) {
-                    return JSONMap.error("密码不能为空");
+                    return error("密码不能为空");
                 }
 
                 password = SysUser.md5Pwd(password);
@@ -574,31 +574,31 @@ public class SysUserApi {
                 }
 
                 if(DB.updateTransaction(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Delete":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:delete")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(userId.isEmpty()) {
-                    return JSONMap.error("用户代码不能为空");
+                    return error("用户代码不能为空");
                 }
 
                 if(DB.update("delete from sys_user where user_id = '"+DB.e(userId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "IsDisable":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:edit:isDisable")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(userId.isEmpty()) {
-                    return JSONMap.error("用户代码不能为空");
+                    return error("用户代码不能为空");
                 }
 
                 if("1".equals(isDisable)) {
@@ -608,36 +608,36 @@ public class SysUserApi {
                 }
 
                 if(DB.update("update sys_user set is_disable = "+isDisable+" where user_id = '"+DB.e(userId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "ResetPwd":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:edit:resetPwd")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(userId.isEmpty()) {
-                    return JSONMap.error("用户代码不能为空");
+                    return error("用户代码不能为空");
                 }
 
-                String newPassword = Http.param("new_password");
+                String newPassword = param("new_password");
 
                 if(Valid.isBlank(newPassword)) {
-                    return JSONMap.error("新密码不能为空");
+                    return error("新密码不能为空");
                 }
 
                 if (DB.update("" +
                         "update sys_user " +
                         "set password = '" + DB.e(SysUser.md5Pwd(newPassword)) + "', pwd_update_date = now() " +
                         "where user_id = '" + DB.e(userId) + "'") != -1) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 
     /**
@@ -646,13 +646,13 @@ public class SysUserApi {
     @PostMapping("/system/api/user/batchUpdateUser")
     @LoginToken(validBackend = true)
     public JSONMap batchUpdateUser() {
-        String updateType = Http.param("UpdateType");
-        String sex = Http.param("sex");
-        String isDisable = Http.param("is_disable");
-        String userIds = Http.param("user_id_arr");
+        String updateType = param("UpdateType");
+        String sex = param("sex");
+        String isDisable = param("is_disable");
+        String userIds = param("user_id_arr");
 
         if(Valid.isBlank(userIds)) {
-            return JSONMap.error("请选择用户");
+            return error("请选择用户");
         }
 
         String[] userIdArr = userIds.split(",");
@@ -666,14 +666,14 @@ public class SysUserApi {
                     userIdArrStr += "'"+DB.e(String.valueOf(Integer.parseInt(userIdArr[i])))+"',";
                 }
             } catch(Exception e) {
-                return JSONMap.error("用户代码格式有误");
+                return error("用户代码格式有误");
             }
         }
 
         switch(updateType) {
             case "IsDisable":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:edit:isDisable")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
@@ -684,12 +684,12 @@ public class SysUserApi {
                 }
 
                 if(DB.update("update sys_user set is_disable = "+isDisable+" where user_id in ("+userIdArrStr+")") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
 //            case "Sex":
 //                if(!ApiGlobalInterceptor.permission("lspk:ls:user:edit:sex")) {
-//                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+//                    write(403,error("接口执行失败，该用户没有权限"));
 //                    return null;
 //                }
 //
@@ -698,21 +698,21 @@ public class SysUserApi {
 //                }
 //
 //                if(DB.update("update sys_user set sex = "+sex+" where user_id in ("+userIdArrStr+")") > 0) {
-//                    return JSONMap.success();
+//                    return success();
 //                }
 //                break;
             case "Delete":
                 if(!ApiGlobalInterceptor.permission("lspk:ls:user:delete")) {
-                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                    write(403,error("接口执行失败，该用户没有权限"));
                     return null;
                 }
 
                 if(DB.update("delete from sys_user where user_id in ("+userIdArrStr+")") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 
     /**
@@ -721,35 +721,35 @@ public class SysUserApi {
     @PostMapping("/system/api/user/updatePersonal")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:user:updatePersonal")
     public JSONMap updatePersonal() {
-        String updateType = Http.param("UpdateType");
+        String updateType = param("UpdateType");
 
         switch(updateType) {
             case "BaseInfo":
-                String name = Http.param("name");
-                String personalSignature = Http.param("personal_signature");
-                String birthday = Http.param("birthday");
-                String phone = Http.param("phone");
-                String email = Http.param("email");
-                String sex = Http.param("sex");
+                String name = param("name");
+                String personalSignature = param("personal_signature");
+                String birthday = param("birthday");
+                String phone = param("phone");
+                String email = param("email");
+                String sex = param("sex");
 
                 if (Valid.isEmpty(name) || name.length() > 50) {
-                    return JSONMap.error("名称长度范围为1-50个字符");
+                    return error("名称长度范围为1-50个字符");
                 }
 
                 if (personalSignature.length() > 250) {
-                    return JSONMap.error("个性签名长度范围为0-250个字符");
+                    return error("个性签名长度范围为0-250个字符");
                 }
 
                 if (!DateTime.valid(birthday, "yyyy-MM-dd")) {
-                    return JSONMap.error("生日格式不对");
+                    return error("生日格式不对");
                 }
 
                 if (phone.length() > 50) {
-                    return JSONMap.error("手机号长度范围为0-50个字符");
+                    return error("手机号长度范围为0-50个字符");
                 }
 
                 if (email.length() > 150) {
-                    return JSONMap.error("邮箱长度范围为0-50个字符");
+                    return error("邮箱长度范围为0-50个字符");
                 }
 
                 switch (sex) {
@@ -765,17 +765,17 @@ public class SysUserApi {
                         "set name = '" + DB.e(name) + "',personal_signature = '" + DB.e(personalSignature) + "',birthday = '" + DB.e(birthday) + "'," +
                         "   phone = '" + DB.e(phone) + "',email = '" + DB.e(email) + "',sex = '" + sex + "' " +
                         "where user_id = '" + SysUser.getBackendLoginId() + "'") != 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Avatar":
-                Part avatarFile = Http.part("avatarFile");
+                Part avatarFile = part("avatarFile");
 
                 String filename = avatarFile.getSubmittedFileName();
                 String suffix = IO.getSuffix(filename);
 
                 if (avatarFile.getSize() > (1024 * 1024 * 5)) {
-                    return JSONMap.error("图片大小不能超过5MB");
+                    return error("图片大小不能超过5MB");
                 }
 
                 switch (suffix.toLowerCase()) {
@@ -784,7 +784,7 @@ public class SysUserApi {
                     case "png":
                         break;
                     default:
-                        JSONMap.error("只允许上传PNG和JPG格式的图片");
+                        error("只允许上传PNG和JPG格式的图片");
                 }
 
                 String filepath = "upload/system/"+DateTime.now("yyyyMMdd")+"/" +
@@ -796,37 +796,37 @@ public class SysUserApi {
                     avatarFile.write(path);
                 } catch (IOException e) {
                     Log.write("Error_system",Log.getException(e));
-                    return JSONMap.error("上传失败");
+                    return error("上传失败");
                 }
 
-                return JSONMap.success("/" + filepath);
+                return success("/" + filepath);
             case "Password":
-                String password = Http.param("password");
-                String newPassword = Http.param("new_password");
+                String password = param("password");
+                String newPassword = param("new_password");
                 password = SysUser.md5Pwd(password);
 
                 if (Valid.isEmpty(password)) {
-                    return JSONMap.error("密码不能为空");
+                    return error("密码不能为空");
                 }
 
                 if (newPassword.length() > 50) {
-                    return JSONMap.error("新密码范围是1-50个字符");
+                    return error("新密码范围是1-50个字符");
                 }
 
                 if (!password.equals(
                         DB.queryFirstField("select password from sys_user where user_id = '" + SysUser.getBackendLoginId() + "'")
                 )) {
-                    return JSONMap.error("密码错误");
+                    return error("密码错误");
                 }
 
                 if (DB.update("" +
                         "update sys_user " +
                         "set password = '" + DB.e(SysUser.md5Pwd(newPassword)) + "', pwd_update_date = now() " +
                         "where user_id = '" + SysUser.getBackendLoginId() + "'") != -1) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 }

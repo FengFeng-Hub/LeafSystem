@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.concurrent.locks.ReentrantLock;
 
 @RestController
-public class SysTimedTaskApi {
+public class SysTimedTaskApi extends Http {
     @Autowired
     private SysTimedTaskService sysTimedTaskService;
 
@@ -30,14 +30,14 @@ public class SysTimedTaskApi {
     @GetMapping("/system/api/timedTask/getSysTimedTaskList")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:timedTask:list")
     public JSONMap getSysTimedTaskList() {
-        String timedTaskId = Http.param("timed_task_id");
-        String taskDesc = Http.param("task_desc");
-        String taskGroup = Http.param("task_group");
-        String funcPath = Http.param("func_path");
-        String cronExpression = Http.param("cron_expression");
-        String status = Http.param("status");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
+        String timedTaskId = param("timed_task_id");
+        String taskDesc = param("task_desc");
+        String taskGroup = param("task_group");
+        String funcPath = param("func_path");
+        String cronExpression = param("cron_expression");
+        String status = param("status");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
         String sql = "" +
                 "select timed_task_id,task_desc,task_group,func_path,cron_expression,status,misfire_policy,concurrent_execute,is_log,memo," +
                 "   ls_create_time,b.name 'ls_create_by',ls_update_time,c.name 'ls_update_by' " +
@@ -46,7 +46,7 @@ public class SysTimedTaskApi {
                 "   left join sys_user c on a.ls_update_by = c.user_id ";
         Where.Operator relationship = Where.Operator.LIKE;
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             relationship = Where.Operator.EQ;
         }
 
@@ -76,7 +76,7 @@ public class SysTimedTaskApi {
             default:
                 sql += " order by timed_task_id desc ";
         }
-        return DB.sqlToJSONMap(sql,Http.param("PageNo"),Http.param("PageCount"),"100");
+        return DB.sqlToJSONMap(sql,param("PageNo"),param("PageCount"),"100");
     }
 
     /**
@@ -85,17 +85,17 @@ public class SysTimedTaskApi {
     @PostMapping("/system/api/timedTask/updateSysTimedTask")
     @LoginToken(validBackend = true)
     public JSONMap updateSysTimedTask() {
-        String updateType = Http.param("UpdateType");
-        String timedTaskId = Http.param("timed_task_id");
-        String taskDesc = Http.param("task_desc");
-        String taskGroup = Http.param("task_group");
-        String funcPath = Http.param("func_path");
-        String cronExpression = Http.param("cron_expression");
-        String status = Http.param("status");
-        String misfirePolicy = Http.param("misfire_policy");
-        String concurrentExecute = Http.param("concurrent_execute");
-        String isLog = Http.param("is_log");
-        String memo = Http.param("memo");
+        String updateType = param("UpdateType");
+        String timedTaskId = param("timed_task_id");
+        String taskDesc = param("task_desc");
+        String taskGroup = param("task_group");
+        String funcPath = param("func_path");
+        String cronExpression = param("cron_expression");
+        String status = param("status");
+        String misfirePolicy = param("misfire_policy");
+        String concurrentExecute = param("concurrent_execute");
+        String isLog = param("is_log");
+        String memo = param("memo");
         String backendLoginId = SysUser.getBackendLoginId();
 
         if (!"1".equals(isLog)) {
@@ -136,7 +136,7 @@ public class SysTimedTaskApi {
             case "Pause":
             case "Stop":
                 if(timedTaskId.isEmpty()) {
-                    return JSONMap.error("定时任务代码不能为空");
+                    return error("定时任务代码不能为空");
                 }
 
                 timedTask = DB.queryFirst("" +
@@ -145,13 +145,13 @@ public class SysTimedTaskApi {
                         "where timed_task_id = '" + DB.e(timedTaskId) + "'");
 
                 if (timedTask == null) {
-                    return JSONMap.error("获取定时任务失败");
+                    return error("获取定时任务失败");
                 }
 
                 _taskGroup = timedTask.getString("task_group");
 
                 if (Valid.isEmpty(_taskGroup)) {
-                    return JSONMap.error("获取定时任务分组失败");
+                    return error("获取定时任务分组失败");
                 }
                 break;
         }
@@ -164,28 +164,28 @@ public class SysTimedTaskApi {
             switch(updateType) {
                 case "Edit":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:edit")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
                     if(timedTaskId.isEmpty()) {
-                        return JSONMap.error("定时任务代码不能为空");
+                        return error("定时任务代码不能为空");
                     }
 
                     if(taskDesc.isEmpty()) {
-                        return JSONMap.error("任务描述不能为空");
+                        return error("任务描述不能为空");
                     }
 
                     if(taskGroup.isEmpty()) {
-                        return JSONMap.error("任务分组不能为空");
+                        return error("任务分组不能为空");
                     }
 
                     if(funcPath.isEmpty()) {
-                        return JSONMap.error("函数路径不能为空");
+                        return error("函数路径不能为空");
                     }
 
                     if(cronExpression.isEmpty()) {
-                        return JSONMap.error("Cron表达式不能为空");
+                        return error("Cron表达式不能为空");
                     }
 
                     String sql = "" +
@@ -202,12 +202,12 @@ public class SysTimedTaskApi {
 //                                    timedTaskId, taskGroup, cronExpression, funcPath,
 //                                    status, misfirePolicy, concurrentExecute, isLog
 //                            )) {
-//                                return JSONMap.success();
+//                                return success();
 //                            } else {
-//                                return JSONMap.error("添加定时任务失败");
+//                                return error("添加定时任务失败");
 //                            }
 //                        } else {
-//                            return JSONMap.error("删除定时任务失败");
+//                            return error("删除定时任务失败");
 //                        }
 //                    }
                     if (
@@ -223,29 +223,29 @@ public class SysTimedTaskApi {
                                 }
                             }) > 0
                     ) {
-                        return JSONMap.success();
+                        return success();
                     }
                     break;
                 case "Add":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:add")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
                     if(taskDesc.isEmpty()) {
-                        return JSONMap.error("任务描述不能为空");
+                        return error("任务描述不能为空");
                     }
 
                     if(taskGroup.isEmpty()) {
-                        return JSONMap.error("任务分组不能为空");
+                        return error("任务分组不能为空");
                     }
 
                     if(funcPath.isEmpty()) {
-                        return JSONMap.error("函数路径不能为空");
+                        return error("函数路径不能为空");
                     }
 
                     if(cronExpression.isEmpty()) {
-                        return JSONMap.error("Cron表达式不能为空");
+                        return error("Cron表达式不能为空");
                     }
 
                     sql = "" +
@@ -253,7 +253,7 @@ public class SysTimedTaskApi {
                             "value('"+DB.e(taskDesc)+"','"+DB.e(taskGroup)+"','"+DB.e(funcPath)+"','"+DB.e(cronExpression)+"','"+DB.e(status)+"','"+DB.e(misfirePolicy)+"','"+DB.e(concurrentExecute)+"','"+DB.e(isLog)+"','"+DB.e(memo)+"',now(),'"+backendLoginId+"');" +
                             "select last_insert_id() 'new_task_id';";
 
-    //                if(DB.update(sql) > 0) return JSONMap.success();
+    //                if(DB.update(sql) > 0) return success();
 
                     if (
                             !"0".equals(DB.execute(sql, (JSONList result) -> {
@@ -287,50 +287,50 @@ public class SysTimedTaskApi {
                                 }
                             }).getString(0))
                     ) {
-                        return JSONMap.success();
+                        return success();
                     }
                     break;
                 case "Delete":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:delete")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
                     if(timedTaskId.isEmpty()) {
-                        return JSONMap.error("定时任务代码不能为空");
+                        return error("定时任务代码不能为空");
                     }
 
                     _taskGroup = DB.queryFirstField("select task_group from sys_timed_task where timed_task_id = '" + DB.e(timedTaskId) + "'");
 
                     if (Valid.isEmpty(_taskGroup)) {
-                        return JSONMap.error("获取定时任务分组失败");
+                        return error("获取定时任务分组失败");
                     }
 
                     if(DB.update("delete from sys_timed_task where timed_task_id = '"+DB.e(timedTaskId)+"'") > 0) {
                         sysTimedTaskService.deleteTimedTask(timedTaskId, _taskGroup);
-                        return JSONMap.success();
+                        return success();
                     }
                     break;
                 case "Execute":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:execute")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
                     if (sysTimedTaskService.executeTimedTask(timedTaskId, finalTimedTask.getString("func_path"), finalTimedTask.getString("is_log"), false)) {
-                        return JSONMap.success("执行成功");
+                        return success("执行成功");
                     }
                     break;
                 case "Start":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:start")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
                     switch (timedTask.getString("status")){
                         // 原本状态是启动，响应失败
                         case "1":
-                            return JSONMap.error("启动失败，该任务是启动状态");
+                            return error("启动失败，该任务是启动状态");
                         // 原本状态是暂停，恢复任务
                         case "2":
                             if(
@@ -339,9 +339,9 @@ public class SysTimedTaskApi {
                                             () -> !sysTimedTaskService.resumeJob(timedTaskId, finalTaskGroup)
                                     ) == -1
                             ) {
-                                return JSONMap.error("恢复任务失败");
+                                return error("恢复任务失败");
                             } else {
-                                return JSONMap.success("恢复任务成功");
+                                return success("恢复任务成功");
                             }
                         // 原本任务是终止，创建任务
                         default:
@@ -362,14 +362,14 @@ public class SysTimedTaskApi {
                                             }
                                     ) == -1
                             ) {
-                                return JSONMap.error("创建任务失败失败");
+                                return error("创建任务失败失败");
                             } else {
-                                return JSONMap.success("创建任务成功");
+                                return success("创建任务成功");
                             }
                     }
                 case "Pause":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:pause")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
@@ -379,13 +379,13 @@ public class SysTimedTaskApi {
                                     () -> !sysTimedTaskService.pauseJob(timedTaskId, finalTaskGroup)
                             ) == -1
                     ) {
-                        return JSONMap.error("暂停任务失败");
+                        return error("暂停任务失败");
                     } else {
-                        return JSONMap.success("暂停任务成功");
+                        return success("暂停任务成功");
                     }
                 case "Stop":
                     if(!ApiGlobalInterceptor.permission("lspk:ls:timedTask:stop")) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        write(403,error("接口执行失败，该用户没有权限"));
                         return null;
                     }
 
@@ -395,17 +395,17 @@ public class SysTimedTaskApi {
                                     () -> !sysTimedTaskService.deleteTimedTask(timedTaskId, finalTaskGroup)
                             ) == -1
                     ) {
-                        return JSONMap.error("终止任务失败");
+                        return error("终止任务失败");
                     } else {
-                        return JSONMap.success("终止任务成功");
+                        return success("终止任务成功");
                     }
                 default:
-                    return JSONMap.error("修改类型有误");
+                    return error("修改类型有误");
             }
         } finally {
             lock.unlock();
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 
     /**
@@ -414,19 +414,19 @@ public class SysTimedTaskApi {
     @GetMapping("/api/sysTimedTaskLog/getSysTimedTaskLogList")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:timedTaskLog:list")
     public JSONMap getSysTimedTaskLogList() {
-        String timedTaskLogId = Http.param("timed_task_log_id");
-        String funcPath = Http.param("func_path");
-        String status = Http.param("status");
-        String type = Http.param("type");
-        String sortField = Http.param("SortField");
-        String sortOrder = Http.param("SortOrder");
+        String timedTaskLogId = param("timed_task_log_id");
+        String funcPath = param("func_path");
+        String status = param("status");
+        String type = param("type");
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
         String sql = "" +
                 "select a.timed_task_log_id,a.timed_task_id,b.task_desc,b.task_group,a.func_path,a.start_time,a.end_time,a.time,a.status,a.type,a.result " +
                 "from sys_timed_task_log a " +
                 "   left join sys_timed_task b on a.timed_task_id = b.timed_task_id ";
         Where.Operator relationship = Where.Operator.LIKE;
 
-        if("1".equals(Http.param("IsEqual","0"))) {
+        if("1".equals(param("IsEqual","0"))) {
             relationship = Where.Operator.EQ;
         }
 
@@ -451,7 +451,7 @@ public class SysTimedTaskApi {
             default:
                 sql += " order by a.timed_task_log_id desc ";
         }
-        return DB.sqlToJSONMap(sql,Http.param("PageNo"),Http.param("PageCount"),"100");
+        return DB.sqlToJSONMap(sql,param("PageNo"),param("PageCount"),"100");
     }
 
     /**
@@ -460,26 +460,26 @@ public class SysTimedTaskApi {
     @PostMapping("/api/sysTimedTaskLog/updateSysTimedTaskLog")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:timedTaskLog:delete")
     public JSONMap updateSysTimedTaskLog() {
-        String updateType = Http.param("UpdateType");
-        String timedTaskLogId = Http.param("timed_task_log_id");
+        String updateType = param("UpdateType");
+        String timedTaskLogId = param("timed_task_log_id");
 
         switch(updateType) {
             case "Delete":
                 if(timedTaskLogId.isEmpty()) {
-                    return JSONMap.error("定时任务代码不能为空");
+                    return error("定时任务代码不能为空");
                 }
 
                 if(DB.update("delete from sys_timed_task_log where timed_task_log_id = '"+DB.e(timedTaskLogId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "BatchDelete":
-                String timedTaskLogIds = Http.param("timed_task_log_id_arr");
+                String timedTaskLogIds = param("timed_task_log_id_arr");
 
                 String[] timedTaskLogIdArr = timedTaskLogIds.split(",");
 
                 if (timedTaskLogIdArr.length < 1) {
-                    return JSONMap.error("请选择至少一个任务日志");
+                    return error("请选择至少一个任务日志");
                 }
 
                 String timedTaskLogIdArrStr = "";
@@ -492,23 +492,23 @@ public class SysTimedTaskApi {
                             timedTaskLogIdArrStr += "'"+DB.e(String.valueOf(Integer.parseInt(timedTaskLogIdArr[i])))+"',";
                         }
                     } catch(Exception e) {
-                        return JSONMap.error("任务代码格式有误");
+                        return error("任务代码格式有误");
                     }
                 }
 
                 if(DB.update("delete from sys_timed_task_log where timed_task_log_id in ("+timedTaskLogIdArrStr+")") != -1) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Clear":
                 if (DB.update("truncate table sys_timed_task_log") != -1) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 
 }
