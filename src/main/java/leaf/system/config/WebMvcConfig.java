@@ -46,9 +46,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         if("true".equals(environment.getProperty("leaf.global.cors"))) {
             registry.addMapping("/**")
-                    .allowCredentials(true)//是否发送Cookie
-                    .allowedOrigins("*")//放行哪些原始域
-                    .allowedMethods("GET", "POST", "PUT", "DELETE")
+                    .allowCredentials(true) // 是否发送Cookie
+                    .allowedOriginPatterns("*") // 使用模式匹配
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .allowedHeaders("*");
             System.out.println(Log.info("系统开启全局跨域"));
         } else {

@@ -361,7 +361,7 @@ public class SysCodeGenerationApi extends Http {
                 "import org.springframework.web.bind.annotation.RestController;\n" +
                 "\n" +
                 "@RestController\n" +
-                "public class " + moduleNameBigHump + "Api {\n" +
+                "public class " + moduleNameBigHump + "Api extends Http {\n" +
                 "    /**\n" +
                 "     * 获取" + tableDesc2 + "列表\n" +
                 "     */\n" +
