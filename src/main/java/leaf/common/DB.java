@@ -21,25 +21,7 @@ import java.util.function.Supplier;
  * 依赖 mysql-connector-java-8.0.29.jar druid-1.0.9.jar
  */
 public class DB {
-    public static final DruidDataSource DRUID_DATA_SOURCE = new DruidDataSource();
     private static DataSource DATA_SOURCE;
-
-//    /**
-//     * 配置连接
-//     */
-//    public static void config() {
-//        DB.DRUID_DATA_SOURCE.setDriverClassName(Config.Properties.getProperty("common.jdbc.driver",""));
-//        DB.DRUID_DATA_SOURCE.setUrl(Config.Properties.getProperty("common.jdbc.url",""));
-//        DB.DRUID_DATA_SOURCE.setUsername(Config.Properties.getProperty("common.jdbc.username",""));
-//        DB.DRUID_DATA_SOURCE.setPassword(Config.Properties.getProperty("common.jdbc.password",""));
-//        DB.DRUID_DATA_SOURCE.setMaxActive(Config.parseInteger(Config.Properties.getProperty("common.jdbc.maxActive","8"),"common.jdbc.maxActive"));
-//        DB.DRUID_DATA_SOURCE.setMinIdle(Config.parseInteger(Config.Properties.getProperty("common.jdbc.minIdle","0"),"common.jdbc.minIdle"));
-//        DB.DRUID_DATA_SOURCE.setInitialSize(Config.parseInteger(Config.Properties.getProperty("common.jdbc.initialSize","0"),"common.jdbc.initialSize"));
-//        DB.DRUID_DATA_SOURCE.setValidationQuery("SELECT 1");//设置用于检验连接是否有效的SQL语句
-//        DB.DRUID_DATA_SOURCE.setTestOnBorrow(false);//配置从连接池获取连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
-//        DB.DRUID_DATA_SOURCE.setTestOnReturn(false);//配置向连接池归还连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
-//        DB.DRUID_DATA_SOURCE.close();//关闭数据源
-//    }
 
     /**
      * 配置连接
@@ -47,51 +29,6 @@ public class DB {
      */
     public static void druidConfig(DataSource dataSource) {
         DATA_SOURCE = dataSource;
-    }
-
-    /**
-     * 配置连接
-     * @param driver Driver
-     * @param url url
-     * @param root 用户名
-     * @param password 密码
-     */
-    public static void druidConfig(String driver,String url,String root,String password, String initialSize, String maxActive, String minIdle) {
-        DRUID_DATA_SOURCE.setDriverClassName(driver);
-        DRUID_DATA_SOURCE.setUrl(url);
-        DRUID_DATA_SOURCE.setUsername(root);
-        DRUID_DATA_SOURCE.setPassword(password);
-        DB.DRUID_DATA_SOURCE.setInitialSize(Config.parseInteger(initialSize, "spring.datasource.druid.initialSize"));
-        DB.DRUID_DATA_SOURCE.setMaxActive(Config.parseInteger(maxActive, "spring.datasource.druid.maxActive"));
-        DB.DRUID_DATA_SOURCE.setMinIdle(Config.parseInteger(minIdle, "spring.datasource.druid.minIdle"));
-        DRUID_DATA_SOURCE.setValidationQuery("SELECT 1");//设置用于检验连接是否有效的SQL语句
-        DB.DRUID_DATA_SOURCE.setTestOnBorrow(false);//配置从连接池获取连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
-        DB.DRUID_DATA_SOURCE.setTestOnReturn(false);//配置向连接池归还连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
-        DRUID_DATA_SOURCE.close();//关闭数据源
-    }
-
-    /**
-     * 配置连接
-     * @param driver Driver
-     * @param url url
-     * @param root 用户名
-     * @param password 密码
-     * @param maxActive 最大并发连接数 默认:8
-     * @param minIdle 最小空闲连接数 默认:0
-     * @param initialSize 初始连接数 默认:0
-     */
-    public static void druidConfig(String driver,String url,String root,String password,int maxActive,int minIdle,int initialSize) {
-        DRUID_DATA_SOURCE.setDriverClassName(driver);
-        DRUID_DATA_SOURCE.setUrl(url);//设置数据库连接URL
-        DRUID_DATA_SOURCE.setUsername(root);//设置数据库用户名和密码
-        DRUID_DATA_SOURCE.setPassword(password);
-        DRUID_DATA_SOURCE.setMinIdle(minIdle);//设置最小连接数
-        DRUID_DATA_SOURCE.setMaxActive(maxActive);//设置最大活跃连接数
-        DRUID_DATA_SOURCE.setInitialSize(initialSize);//设置初始连接数
-        DRUID_DATA_SOURCE.setValidationQuery("SELECT 1");//设置用于检验连接是否有效的SQL语句
-        DRUID_DATA_SOURCE.setTestOnBorrow(false);//配置向连接池归还连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
-        DRUID_DATA_SOURCE.setTestOnReturn(false);//配置向连接池归还连接时，是否检查连接有效性，true每次都检查；false不检查。做了这个配置会降低性能
-        DRUID_DATA_SOURCE.close();//关闭数据源
     }
 
     /**
@@ -563,10 +500,7 @@ public class DB {
      */
     public static Connection getConnection() {
         try {
-            if (DATA_SOURCE != null) {
-                return DATA_SOURCE.getConnection();
-            }
-            return DRUID_DATA_SOURCE.getConnection();//获取连接
+            return DATA_SOURCE.getConnection();
         } catch (SQLException e1) {
             Log.write("Error_DB",Log.getSQLException(e1));
         }

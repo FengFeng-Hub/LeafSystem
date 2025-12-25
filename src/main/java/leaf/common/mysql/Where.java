@@ -8,7 +8,7 @@ import leaf.common.util.Valid;
  * SQL条件语句类，用于动态拼接WHERE条件
  */
 public class Where {
-    private String sql = "";
+    private StringBuffer sql = new StringBuffer();
     private boolean isRemoveEmptyValue = false;
     private String pendingLogic = "";
 
@@ -100,18 +100,18 @@ public class Where {
                 case SAFE_EQUAL:
                 case REGEXP:
                     appendPendingLogic();
-                    this.sql += " " + column + " " + operator.getSymbol() + " '" + DB.e(value) + "' ";
+                    this.sql.append(" ").append(column).append(" ").append(operator.getSymbol()).append(" '").append(DB.e(value)).append("' ");
                     break;
                 case LIKE:
                 case NOT_LIKE:
                     appendPendingLogic();
-                    this.sql += " " + column + " " + operator.getSymbol() + " '%" + DB.el(value) + "%' ";
+                    this.sql.append(" ").append(column).append(" ").append(operator.getSymbol()).append(" '%").append(DB.el(value)).append("%' ");
                     break;
                 case IN:
                 case NOT_IN:
                     if(!Valid.isBlank(value)) {
                         appendPendingLogic();
-                        this.sql += " " + column + " " + operator.getSymbol() + " (" + value + ") ";
+                        this.sql.append(" ").append(column).append(" ").append(operator.getSymbol()).append(" (").append(value).append(") ");
                     }
                     break;
                 case BETWEEN:
@@ -120,18 +120,18 @@ public class Where {
                     String[] parts = value.split(",");
 
                     if (parts.length == 2) {
-                        this.sql += " " + column + " " + operator.getSymbol() + " '" + DB.e(parts[0]) + "' and '" + DB.e(parts[1]) + "' ";
+                        this.sql.append(" ").append(column).append(" ").append(operator.getSymbol()).append(" '").append(DB.e(parts[0])).append("' and '").append(DB.e(parts[1])).append("' ");
                     }
                     break;
                 case EXISTS:
                 case NOT_EXISTS:
                     appendPendingLogic();
-                    this.sql += " " + operator.getSymbol() + " (" + value + ") ";
+                    this.sql.append(" ").append(operator.getSymbol()).append(" (").append(value).append(") ");
                     break;
                 case IS_NULL:
                 case IS_NOT_NULL:
                     appendPendingLogic();
-                    this.sql += " " + column + " " + operator.getSymbol() + " ";
+                    this.sql.append(" ").append(column).append(" ").append(operator.getSymbol()).append(" ");
                 default:
                     break;
             }
@@ -145,8 +145,8 @@ public class Where {
      * 附加待处理逻辑，在条件前面添加 and 或者 or 关键字
      */
     private void appendPendingLogic() {
-        if (!Valid.isEmpty(sql) && !Valid.isEmpty(pendingLogic)) {
-            this.sql += this.pendingLogic;
+        if (sql.isEmpty() && !Valid.isEmpty(pendingLogic)) {
+            this.sql.append(this.pendingLogic);
         }
     }
 
@@ -354,7 +354,7 @@ public class Where {
     public Where custom(String sql) {
         if (!Valid.isEmpty(sql)) {
             appendPendingLogic();
-            this.sql += " " + sql + " ";
+            this.sql.append(" ").append(sql).append(" ");
             pendingLogic = "";
         }
         return this;
@@ -362,13 +362,13 @@ public class Where {
 
     /**
      * 追加另一个 Where 条件
-     * @param Where Where条件
+     * @param where Where条件
      * @return 当前 Where 对象（用于链式调用）
      */
-    public Where append(Where Where) {
-        if (Where != null && !Valid.isEmpty(Where.sql)) {
+    public Where append(Where where) {
+        if (!where.sql.isEmpty()) {
             appendPendingLogic();
-            this.sql += Where.sql;
+            this.sql.append(where.sql);
             pendingLogic = "";
         }
         return this;
@@ -379,8 +379,8 @@ public class Where {
      * @return 当前 Where 对象（用于链式调用）
      */
     public Where prependWhere() {
-        if(!Valid.isBlank(this.sql)) {
-            this.sql = " where"+ StrUtil.removePrefix(sql,"and","or");
+        if(!this.sql.toString().isBlank()) {
+            this.sql = new StringBuffer(" where").append(StrUtil.removePrefix(sql.toString(),"and","or"));
         }
         return this;
     }
@@ -390,8 +390,8 @@ public class Where {
      * @return 当前 Where 对象（用于链式调用）
      */
     public Where group() {
-        if(!Valid.isEmpty(this.sql)) {
-            this.sql = " (" + this.sql + ") ";
+        if(!this.sql.isEmpty()) {
+            this.sql.append(" (").append(this.sql).append(") ");
         }
 
         return this;
@@ -403,8 +403,8 @@ public class Where {
      * @return 当前 Where 对象（用于链式调用）
      */
     public static Where group(Where subWhere) {
-        if(!Valid.isEmpty(subWhere.sql)) {
-            subWhere.sql = " (" + subWhere.sql + ") ";
+        if(!subWhere.sql.isEmpty()) {
+            subWhere.sql.append(" (").append(subWhere.sql).append(") ");
         }
 
         return subWhere;
@@ -434,6 +434,6 @@ public class Where {
      */
     @Override
     public String toString() {
-        return sql.trim();
+        return sql.toString().trim();
     }
 }
