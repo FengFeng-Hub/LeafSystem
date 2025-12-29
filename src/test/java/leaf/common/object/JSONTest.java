@@ -160,8 +160,8 @@ public class JSONTest {
         result.put("result",list);
         System.out.println(JSON.formatJSON(result.toString()));
 
-        list = list.listToTree("id","parent_id","staff", true,true,false);
-//        list = list.listToTree("id","parent_id","staff");
+//        list = list.listToTree("id","parent_id","staff", true,true,false);
+        list = list.listToTree("id","parent_id","staff");
 
         result.put("result",list);
         System.out.println(JSON.formatJSON(result.toString()));

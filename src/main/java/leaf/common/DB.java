@@ -1,7 +1,5 @@
 package leaf.common;
 
-import com.alibaba.druid.pool.DruidDataSource;
-import com.alibaba.druid.sql.SQLUtils;
 import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
 import leaf.common.util.Num;

@@ -4,7 +4,6 @@ import jakarta.annotation.PostConstruct;
 import leaf.common.DB;
 import leaf.common.Log;
 import leaf.common.net.Mail;
-import leaf.common.object.Redis;
 import leaf.system.annotate.EnableMail;
 import leaf.system.annotate.EnableRedis;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,21 +56,6 @@ public class SystemConfig {
 //            );
         DB.druidConfig(dataSource);
         System.out.println(Log.info("JDBC配置"));
-
-        // 检查启动类是否有EnableRedis注解
-        if (mainClass.isAnnotationPresent(EnableRedis.class)) {
-            Redis.config(
-                    environment.getProperty("spring.redis.host"),
-                    environment.getProperty("spring.redis.port"),
-                    environment.getProperty("spring.redis.password"),
-                    environment.getProperty("spring.redis.database"),
-                    environment.getProperty("spring.redis.jedis.pool.max-active"),
-                    environment.getProperty("spring.redis.jedis.pool.max-idle"),
-                    environment.getProperty("spring.redis.jedis.pool.min-idle"),
-                    environment.getProperty("spring.redis.jedis.pool.max-wait")
-            );
-            System.out.println(Log.info("Redis配置"));
-        }
 
         // 检查启动类是否有EnableMail注解
         if (mainClass.isAnnotationPresent(EnableMail.class)) {

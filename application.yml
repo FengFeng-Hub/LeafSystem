@@ -33,7 +33,7 @@ spring:
     port: 6379
 #    password: 123456
     database: 0
-    jedis:
+    lettuce:
       pool:
         # 连接池最大连接数
         max-active: 8
