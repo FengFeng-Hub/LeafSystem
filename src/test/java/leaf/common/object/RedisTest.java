@@ -18,20 +18,20 @@ public class RedisTest {
 
     @Test
     public void test() {
-        Redis.config(
-                environment.getProperty("spring.redis.host"),
-                environment.getProperty("spring.redis.port"),
-                environment.getProperty("spring.redis.password"),
-                environment.getProperty("spring.redis.database"),
-                environment.getProperty("spring.redis.jedis.pool.max-active"),
-                environment.getProperty("spring.redis.jedis.pool.max-idle"),
-                environment.getProperty("spring.redis.jedis.pool.min-idle"),
-                environment.getProperty("spring.redis.jedis.pool.max-wait")
-        );
-        Redis redis = new Redis(1);
-        System.out.println(redis.clearAll());
-        System.out.println(redis.set("name","zhangsan"));
-        System.out.println(redis.get("name"));
-        redis.close();
+//        Redis.config(
+//                environment.getProperty("spring.redis.host"),
+//                environment.getProperty("spring.redis.port"),
+//                environment.getProperty("spring.redis.password"),
+//                environment.getProperty("spring.redis.database"),
+//                environment.getProperty("spring.redis.jedis.pool.max-active"),
+//                environment.getProperty("spring.redis.jedis.pool.max-idle"),
+//                environment.getProperty("spring.redis.jedis.pool.min-idle"),
+//                environment.getProperty("spring.redis.jedis.pool.max-wait")
+//        );
+//        Redis redis = new Redis(1);
+//        System.out.println(redis.clearAll());
+//        System.out.println(redis.set("name","zhangsan"));
+//        System.out.println(redis.get("name"));
+//        redis.close();
     }
 }

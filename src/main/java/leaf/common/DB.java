@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -455,7 +454,7 @@ public class DB {
         JSONMap count = queryFirst(sql);
 
         if(count == null || count.size() == 0) {
-            Log.write("Error_DB",Log.content("ERROR","ErrorMsg:获取记录条数失败\n------\nSQL:\n"+SQLUtils.formatMySql(sql)+"\n"));
+            Log.write("Error_DB",Log.content("ERROR","ErrorMsg:获取记录条数失败\n------\nSQL:\n" + sql + "\n"));
             return null;
         }
 

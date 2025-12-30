@@ -1,6 +1,5 @@
 package leaf.common;
 
-import com.alibaba.druid.sql.SQLUtils;
 import leaf.common.util.DateTime;
 
 import java.io.*;
@@ -68,10 +67,9 @@ public class Log {
      * @return 格式化后的日志字符串
      */
     public static String getSQLException(SQLException e,String sql) {
-        if(e.getErrorCode() != 1064) {
-            sql = SQLUtils.formatMySql(sql);//格式化SQL语句
-        }
-
+//        if(e.getErrorCode() != 1064) {
+//            sql = SqlFormatter.format(sql);//格式化SQL语句
+//        }
         return "[ ERROR - "+DateTime.now("yyyy-MM-dd HH:mm:ss")+" ================================================== ]\n" +
                 "ErrorMsg:"+e.getMessage()+"\n------\n" +
                 "SQL:"+e.getErrorCode()+"\n"+sql+"\n------\n" +
