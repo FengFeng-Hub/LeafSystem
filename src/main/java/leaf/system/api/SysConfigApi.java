@@ -7,7 +7,8 @@ import leaf.common.object.JSONMap;
 import leaf.common.util.Valid;
 import leaf.system.annotate.LoginToken;
 import leaf.system.common.Http;
-import leaf.system.common.SysUser;
+import leaf.system.model.ApiResponse;
+import leaf.system.model.SysUser;
 import leaf.system.interceptor.ApiGlobalInterceptor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ public class SysConfigApi extends Http {
      * 获取系统配置
      */
     @GetMapping("/system/api/systemConfig/getSystemConfig")
-    public JSONMap getSystemConfig() {
+    public ApiResponse getSystemConfig() {
         String configKeys = param("ConfigKeys");
         JSONMap result = new JSONMap();
         int i;
@@ -74,7 +75,7 @@ public class SysConfigApi extends Http {
      */
     @GetMapping("/system/api/systemConfig/getSystemConfigList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:systemConfig:list")
-    public JSONMap getSystemConfigList() {
+    public ApiResponse getSystemConfigList() {
         String configId = param("config_id");
         String configKey = param("config_key");
         String configValue = param("config_value");
@@ -145,7 +146,7 @@ public class SysConfigApi extends Http {
      */
     @PostMapping("/system/api/systemConfig/updateSystemConfig")
     @LoginToken(validBackend = true)
-    public JSONMap updateSystemConfig() {
+    public ApiResponse updateSystemConfig() {
         String updateType = param("UpdateType");
         String configId = param("config_id");
         String configKey = param("config_key");

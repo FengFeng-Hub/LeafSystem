@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="leaf.system.mapper.SysUserMapper">
+    <sql id="getUserListCondition">
+        <where>
+            <trim prefix="(" suffix=")" prefixOverrides="and | or ">
+                <if test="user_id != null and user_id != ''">
+                    aa.user_id = #{user_id}
+                </if>
+                <if test="name != null and name != ''">
+                    <choose>
+                        <when test="IsEqual == '1'">
+                            or aa.name = #{name}
+                        </when>
+                        <otherwise>
+                            or aa.name like concat('%',#{name},'%')
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test="account != null and account != ''">
+                    <choose>
+                        <when test="IsEqual == '1'">
+                            or aa.account = #{account}
+                        </when>
+                        <otherwise>
+                            or aa.account like concat('%',#{account},'%')
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test="phone != null and phone != ''">
+                    <choose>
+                        <when test="IsEqual == '1'">
+                            or aa.phone = #{phone}
+                        </when>
+                        <otherwise>
+                            or aa.phone like concat('%',#{phone},'%')
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test="email != null and email != ''">
+                    <choose>
+                        <when test="IsEqual == '1'">
+                            or aa.email = #{email}
+                        </when>
+                        <otherwise>
+                            or aa.email like concat('%',#{email},'%')
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test="real_name != null and real_name != ''">
+                    <choose>
+                        <when test="IsEqual == '1'">
+                            or aa.real_name = #{real_name}
+                        </when>
+                        <otherwise>
+                            or aa.real_name like concat('%',#{real_name},'%')
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test="idcard != null and idcard != ''">
+                    <choose>
+                        <when test="IsEqual == '1'">
+                            or aa.idcard = #{idcard}
+                        </when>
+                        <otherwise>
+                            or aa.idcard like concat('%',#{idcard},'%')
+                        </otherwise>
+                    </choose>
+                </if>
+            </trim>
+            <if test="sexs != null and sexs != ''">
+                and aa.sex in
+                <foreach collection="sexs.split(',')" item="sex" open="(" close=")" separator=",">
+                    #{sex}
+                </foreach>
+            </if>
+            <if test="is_disable != null and is_disable != ''">
+                and ifnull(aa.is_disable,0) = #{is_disable}
+            </if>
+            <if test="role_id_arr != null and role_id_arr.size > 0">
+                and ab.role_id in
+                <foreach collection="role_id_arr" item="role_id" open="(" close=")" separator=",">
+                    #{role_id}
+                </foreach>
+            </if>
+        </where>
+        group by aa.user_id
+    </sql>
+    <select id="getUserList" parameterType="map" resultType="map">
+        select aa.user_id,aa.name,aa.account,aa.personal_signature,aa.avatar,aa.birthday,aa.phone,aa.email,
+               aa.real_name,aa.idcard,aa.sex,aa.is_disable,aa.login_ip
+        from sys_user aa
+    </select>
+    <!-- 获取用户列表 -->
+    <select id="getUserList1" parameterType="map" resultType="map">
+        select a.user_id,name,account,personal_signature,avatar,birthday,phone,email,real_name,idcard,
+            sex,a.is_disable,login_ip,login_time,c.role_id,c.role_name
+        from (
+            select aa.user_id,aa.name,aa.account,aa.personal_signature,aa.avatar,aa.birthday,aa.phone,aa.email,
+                aa.real_name,aa.idcard,aa.sex,aa.is_disable,aa.login_ip,aa.login_time,ab.role_id
+            from sys_user aa
+                left join sys_user_role_rel ab on aa.user_id = ab.user_id
+            <include refid="getUserListCondition"/>
+            <!-- 排序 -->
+            order by aa.${SortField} ${SortOrder}
+            <!-- 分页 -->
+            <choose>
+                <when test="pageOffset != null and pageOffset != '' and pageCount != null and pageCount != ''">
+                    limit ${pageOffset}, ${pageCount}
+                </when>
+                <otherwise>
+                    limit 100
+                </otherwise>
+            </choose>
+        ) a
+            left join sys_user_role_rel b on a.user_id = b.user_id
+            left join sys_role c on b.role_id = c.role_id
+    </select>
+    <!-- 获取用户数量 -->
+    <select id="getUserCount" parameterType="map" resultType="string">
+        select a.user_id,name,account,personal_signature,avatar,birthday,phone,email,real_name,idcard,
+        sex,a.is_disable,login_ip,login_time,c.role_id,c.role_name
+        from (
+            select aa.user_id,aa.name,aa.account,aa.personal_signature,aa.avatar,aa.birthday,aa.phone,aa.email,
+                aa.real_name,aa.idcard,aa.sex,aa.is_disable,aa.login_ip,aa.login_time,ab.role_id
+            from sys_user aa
+                left join sys_user_role_rel ab on aa.user_id = ab.user_id
+            <include refid="getUserListCondition"/>
+            <!-- 排序 -->
+            order by aa.${SortField} ${SortOrder}
+            <!-- 分页 -->
+            <choose>
+                <when test="pageOffset != null and pageCount != null">
+                    limit ${pageOffset}, ${pageCount}
+                </when>
+                <otherwise>
+                    limit 100
+                </otherwise>
+            </choose>
+        ) a
+        left join sys_user_role_rel b on a.user_id = b.user_id
+        left join sys_role c on b.role_id = c.role_id
+    </select>
+</mapper>

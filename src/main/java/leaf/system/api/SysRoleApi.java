@@ -3,7 +3,8 @@ package leaf.system.api;
 import leaf.common.mysql.Where;
 import leaf.system.common.Http;
 import leaf.system.common.SysCommon;
-import leaf.system.common.SysUser;
+import leaf.system.model.ApiResponse;
+import leaf.system.model.SysUser;
 import leaf.common.DB;
 import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
@@ -24,7 +25,7 @@ public class SysRoleApi extends Http {
      */
     @GetMapping("/system/api/role/getRoleList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:role:list")
-    public JSONMap getRoleList() {
+    public ApiResponse getRoleList() {
         String roleId = param("role_id");
         String roleName = param("role_name");
         String isAllow_login_backend = param("is_allow_login_backend");
@@ -83,7 +84,7 @@ public class SysRoleApi extends Http {
      * 修改角色
      */
     @PostMapping("/system/api/role/updateRole")
-    public JSONMap updateRole() {
+    public ApiResponse updateRole() {
         String updateType = param("UpdateType");
         String roleId = param("role_id");
         String roleName = param("role_name");
@@ -209,7 +210,7 @@ public class SysRoleApi extends Http {
      */
     @GetMapping("/system/api/role/getRoleMenuList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:role:menu:list")
-    public JSONMap getRoleMenuList() {
+    public ApiResponse getRoleMenuList() {
         String roleId = param("role_id");
         String sql;
 
@@ -232,7 +233,7 @@ public class SysRoleApi extends Http {
      */
     @PostMapping("/system/api/role/updateRoleMenu")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:role:menu:edit")
-    public JSONMap updateRoleMenu() {
+    public ApiResponse updateRoleMenu() {
         String roleId = param("role_id");
         String menuIds = param("menu_id_arr");
         String[] menuIdArr = menuIds.split(",");
@@ -261,7 +262,7 @@ public class SysRoleApi extends Http {
      * 获取角色菜单权限键列表
      */
     @GetMapping("/system/api/role/getRoleMenuPermissionKeyList")
-    public JSONMap getRoleMenuPermissionKeyList() {
+    public ApiResponse getRoleMenuPermissionKeyList() {
         String menuId = param("menu_id");
         String parentMenuId = param("parent_menu_id");
         String type = param("type");
@@ -304,7 +305,7 @@ public class SysRoleApi extends Http {
     @Deprecated
     @GetMapping("/system/api/role/getRoleMenuTree")
     @LoginToken(validBackend = true)
-    public JSONMap getRoleMenuTree() {
+    public ApiResponse getRoleMenuTree() {
         String roleId = param("role_id");
         String sql;
 

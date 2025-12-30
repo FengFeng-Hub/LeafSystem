@@ -2,7 +2,8 @@ package leaf.system.api;
 
 import leaf.common.mysql.Where;
 import leaf.system.common.Http;
-import leaf.system.common.SysUser;
+import leaf.system.model.ApiResponse;
+import leaf.system.model.SysUser;
 import leaf.common.DB;
 import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
@@ -25,7 +26,7 @@ public class SysMenuApi extends Http {
     @GetMapping("/system/api/menu/getMenuTree")
     @LoginToken(validBackend = true)
 //    @Cacheable(cacheNames = "SpringCache_system_menu",key = "'MenuTree'")//如果使用该注解，第一次从数据库拿数据，之后从缓存拿数据
-    public JSONMap getMenuTree() {
+    public ApiResponse getMenuTree() {
 //        System.out.println(Log.content("DEBUG","获取菜单tree没有走缓存"));
         String sql = "",userRoleIdStr = SysUser.getUserRoleIdStr();
         if("1".equals(userRoleIdStr) || userRoleIdStr.startsWith("1,")) {
@@ -52,7 +53,7 @@ public class SysMenuApi extends Http {
      */
     @GetMapping("/system/api/menu/getMenuList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:menu:list")
-    public JSONMap getMenuList() {
+    public ApiResponse getMenuList() {
         String menuId = param("menu_id");
         String menuName = param("menu_name");
         String parentMenuId = param("parent_menu_id");
@@ -100,7 +101,7 @@ public class SysMenuApi extends Http {
                 .or().add("a.menu_id",menuId, Where.Operator.EQ)
                 .or().add("a.menu_name",menuName,relationship)
                 .or().add("a.parent_menu_id",parentMenuId,relationship)
-                .or().add("b.menu_name",parentMenuName,relationship).group()
+                .or().add("b.parent_menu_name",parentMenuName,relationship).group()
                 .and().in("a.type",typeArr)
                 .and().eq("a.is_show",isShow).prependWhere().toString();
 
@@ -126,7 +127,7 @@ public class SysMenuApi extends Http {
     @PostMapping("/system/api/menu/updateMenu")
     @LoginToken(validBackend = true)
 //    @CacheEvict(cacheNames = "SpringCache_system_menu",key = "'MenuTree'")//修改菜单后会删除getMenuTree接口返回值的缓存
-    public JSONMap updateMenu() {
+    public ApiResponse updateMenu() {
         String updateType = param("UpdateType");
         String menuId = param("menu_id");
         String menuName = param("menu_name");

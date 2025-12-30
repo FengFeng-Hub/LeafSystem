@@ -5,13 +5,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import leaf.common.Clazz;
 import leaf.system.annotate.ApiInterceptor;
 import leaf.system.common.Http;
-import leaf.system.common.SysUser;
+import leaf.system.model.ApiResponse;
+import leaf.system.model.SysUser;
 import leaf.common.DB;
 import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
 import leaf.common.util.Valid;
 import leaf.system.annotate.LoginToken;
-import leaf.system.pojo.SysCurrentUser;
+import leaf.system.model.SysCurrentUser;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -39,26 +40,26 @@ public class ApiGlobalInterceptor implements HandlerInterceptor {
 
                 //如果没有前台用户或者后台用户登录
                 if(Valid.isEmpty(currentUser.getBackendUserId()) && Valid.isEmpty(currentUser.getFrontendUserId())) {
-                    Http.write(403,JSONMap.error("接口执行失败，用户未登录"));
+                    Http.write(403, ApiResponse.error("接口执行失败，用户未登录"));
                     return false;
                 }
 
                 //如果需要验证后台用户并且没有后台用户登录
                 if(loginTokenAnnotation.validBackend() && Valid.isEmpty(currentUser.getBackendUserId())) {
-                    Http.write(403,JSONMap.error("接口执行失败，后台用户未登录"));
+                    Http.write(403,ApiResponse.error("接口执行失败，后台用户未登录"));
                     return false;
                 }
 
                 //如果需要验证前台用户并且没有前台用户登录
                 if(loginTokenAnnotation.validFrontend() && Valid.isEmpty(currentUser.getFrontendUserId())) {
-                    Http.write(403,JSONMap.error("接口执行失败，前台用户未登录"));
+                    Http.write(403,ApiResponse.error("接口执行失败，前台用户未登录"));
                     return false;
                 }
 
                 //接口权限验证
                 if(!"".equals(permissionKey)) {
                     if(!permission(permissionKey,currentUser.getBackendUserId(),currentUser.getFrontendUserId())) {
-                        Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+                        Http.write(403,ApiResponse.error("接口执行失败，该用户没有权限"));
                         return false;
                     }
                 }

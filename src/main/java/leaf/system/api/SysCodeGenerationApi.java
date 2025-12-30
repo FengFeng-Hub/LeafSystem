@@ -7,6 +7,7 @@ import leaf.common.util.StrUtil;
 import leaf.common.util.Valid;
 import leaf.system.annotate.LoginToken;
 import leaf.system.common.Http;
+import leaf.system.model.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,7 +32,7 @@ public class SysCodeGenerationApi extends Http {
      */
     @GetMapping("/system/api/codeGeneration/getDBTableInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:codeGeneration:DBTableInfo")
-    public JSONMap getDBTableInfo() {
+    public ApiResponse getDBTableInfo() {
         String tableName = param("table_name");
         String tableComment = param("table_comment");
         String sortField = param("SortField");
@@ -80,7 +81,7 @@ public class SysCodeGenerationApi extends Http {
      */
     @GetMapping("/system/api/codeGeneration/getDBTableFieldInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:codeGeneration:DBTableFieldInfo")
-    public JSONMap getDBTableFieldInfo() {
+    public ApiResponse getDBTableFieldInfo() {
         return success(DB.query("" +
                 "select column_name 'column_name',column_comment 'column_comment',column_type 'column_type'," +
                 "   is_nullable 'is_nullable',column_default 'column_default',column_key 'column_key' " +
@@ -93,7 +94,7 @@ public class SysCodeGenerationApi extends Http {
      */
     @PostMapping("/system/api/codeGeneration/generationCode")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:codeGeneration:generationCode")
-    public JSONMap generationCode(@RequestBody JSONMap requestJSON) {
+    public ApiResponse generationCode(@RequestBody JSONMap requestJSON) {
 //        System.out.println(requestJSON);
         String tableName = requestJSON.getString("table_name");
         String tableDesc = requestJSON.getString("table_desc");
@@ -460,8 +461,6 @@ public class SysCodeGenerationApi extends Http {
                 "    <a-button v-if=\"pageParams.backMenuParams\" size=\"small\"\n" +
                 "        @click=\"QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})\"\n" +
                 "        style=\"margin-right: 10px;\"><a-icon type=\"rollback\"></a-icon> 返回</a-button>\n" +
-                "    <b>" + tableDesc2 + "管理</b>\n" +
-                "    <a-divider></a-divider>\n" +
                 "    <div class=\"ls-table-tool\">\n" +
                 "        <a-input-group compact style=\"width: 400px;\">\n" +
                 "            <a-select v-model=\"searchConfig.searchType\" style=\"width: 130px;\">\n" +
@@ -583,7 +582,7 @@ public class SysCodeGenerationApi extends Http {
                 "                            _this.tableData = result.data;\n" +
                 "                            _this.selectedRowKeys = [];\n" +
                 "                            _this.selectedIds = [];\n" +
-                "                            _this.tablePagination.total = result.dataCount;\n" +
+                "                            _this.tablePagination.total = result.Count;\n" +
                 "                            _this.tableLoading = false;\n" +
                 "                        } else {\n" +
                 "                            _this.$message.error(result.Msg);\n" +

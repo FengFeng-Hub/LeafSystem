@@ -5,6 +5,7 @@ import leaf.common.object.JSONMap;
 import leaf.common.util.Num;
 import leaf.common.util.StrUtil;
 import leaf.common.util.Valid;
+import leaf.system.model.ApiResponse;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -349,7 +350,7 @@ public class DB {
      * {
      *      "IsSuccess": "1",//是否调用成功 0:否;1:是
      *      "data": [响应数据],
-     *      "dataCount": "数据数量",
+     *      "Count": "数据数量",
      *      "Msg": "响应信息"
      * }
      * 失败：
@@ -358,7 +359,7 @@ public class DB {
      *     "Msg": "响应信息"
      * }
      */
-    public static JSONMap sqlToJSONMap(String sql) {
+    public static ApiResponse sqlToJSONMap(String sql) {
         return sqlToJSONMap(sql,null,null,null);
     }
 
@@ -372,7 +373,7 @@ public class DB {
      * {
      *      "IsSuccess": "1",//是否调用成功 0:否;1:是
      *      "data": [响应数据],
-     *      "dataCount": "数据数量",
+     *      "Count": "数据数量",
      *      "Msg": "响应信息"
      * }
      * 失败：
@@ -381,7 +382,7 @@ public class DB {
      *     "Msg": "响应信息"
      * }
      */
-    public static JSONMap sqlToJSONMap(String sql,String pageNo,String pageCount) {
+    public static ApiResponse sqlToJSONMap(String sql,String pageNo,String pageCount) {
         return sqlToJSONMap(sql,pageNo,pageCount,null);
     }
 
@@ -396,7 +397,7 @@ public class DB {
      * {
      *      "IsSuccess": "1",//是否调用成功 0:否;1:是
      *      "data": [响应数据],
-     *      "dataCount": "数据数量",
+     *      "Count": "数据数量",
      *      "Msg": "响应信息"
      * }
      * 失败：
@@ -405,11 +406,11 @@ public class DB {
      *     "Msg": "响应信息"
      * }
      */
-    public static JSONMap sqlToJSONMap(String sql,String pageNo,String pageCount,String defaultCount) {
+    public static ApiResponse sqlToJSONMap(String sql, String pageNo, String pageCount, String defaultCount) {
         String count = getQueryCount(sql);
 
         if (count == null) {
-            return JSONMap.error("获取记录条数失败");
+            return ApiResponse.error("获取记录条数失败");
         }
 
         sql = StrUtil.removePrefix(sql,";");
@@ -423,10 +424,10 @@ public class DB {
         JSONList list = query(sql);
 
         if(list == null) {
-            return JSONMap.error("SQL执行失败");
+            return ApiResponse.error("SQL执行失败");
         }
 
-        return JSONMap.success(list,count,"SQL执行成功");
+        return ApiResponse.success(list).count(count).message("SQL执行成功");
     }
 
     /**
@@ -454,7 +455,7 @@ public class DB {
         JSONMap count = queryFirst(sql);
 
         if(count == null || count.size() == 0) {
-            Log.write("Error_DB",Log.content("ERROR","ErrorMsg:获取记录条数失败\n------\nSQL:\n" + sql + "\n"));
+            Log.write("Error_DB",Log.content("ERROR","ErrorMsg:获取记录条数失败\n------\nSQL:\n"+sql+"\n"));
             return null;
         }
 

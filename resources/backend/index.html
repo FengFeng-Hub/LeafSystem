@@ -54,9 +54,11 @@
             <!-- 顶部导航 -->
             <a-layout-header class="ls-main-header">
                 <div>
-                    <a-icon class="trigger" :type="collapsed ? 'menu-unfold' : 'menu-fold'" @click="collapsed = !collapsed" style="font-size: 18px; cursor: pointer;"></a-icon>
-                    <a-icon type="reload" @click="handleRefresh" title="刷新" style="margin-left: 24px; font-size: 18px; cursor: pointer;"></a-icon>
-                    <a-icon type="fullscreen" @click="containerFullscreen()" title="全屏" style="margin-left: 24px; font-size: 18px; cursor: pointer;"></a-icon>
+                    <a-icon class="trigger" :type="collapsed ? 'menu-unfold' : 'menu-fold'" @click="collapsed = !collapsed" style="margin-right: 10px;font-size: 18px; cursor: pointer;"></a-icon>
+                    <a-icon type="reload" @click="handleRefresh" title="刷新" style="margin: 0 10px; font-size: 18px; cursor: pointer;"></a-icon>
+                    <a-icon type="fullscreen" @click="containerFullscreen()" title="全屏" style="margin: 0 20px 0 10px; font-size: 18px; cursor: pointer;"></a-icon>
+                    <!-- 面包屑导航 -->
+                    <template v-for="(item, index) in breadcrumb"><span class="ls-main-breadcrumb-item" :key="index">{{item}}</span></template>
                 </div>
                 <div class="ls-main-header-right">
                     <a-icon type="bell" class="ls-main-header-action"></a-icon>
@@ -124,10 +126,6 @@
                     <a-icon type="fullscreen"></a-icon>
                     <span>全屏</span>
                 </div>
-            </div>
-            <!-- 面包屑导航 -->
-            <div class="ls-main-breadcrumb">
-                <template v-for="(item, index) in breadcrumb"><span class="ls-main-breadcrumb-item" :key="index">{{item}}</span></template>
             </div>
             <a-spin v-if="isShowLoadIcon" style="margin-top: 200px;width: 100%;"></a-spin>
             <!-- 内容区 -->

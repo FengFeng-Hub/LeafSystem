@@ -17,8 +17,6 @@
     <a-button v-if="pageParams.backMenu" size="small" @click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {
 		...{menu_name: '菜单管理'}, ...pageParams.backMenu
 	})" style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
-    <b>代码生成</b>
-    <a-divider></a-divider>
     <div class="ls-table-tool">
         <a-input-group compact style="width: 350px;">
             <a-select v-model="searchConfig.searchType" style="width: 100px;">
@@ -129,7 +127,7 @@
                         success(result) {
                             if(result.IsSuccess === '1') {
                                 _this.tableData = result.data;
-                                _this.tablePagination.total = result.dataCount;
+                                _this.tablePagination.total = result.Count;
                                 _this.tableLoading = false;
                             } else {
                                 _this.$message.error(result.Msg);

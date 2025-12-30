@@ -7,6 +7,7 @@ import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
 import leaf.system.annotate.LoginToken;
 import leaf.system.interceptor.ApiGlobalInterceptor;
+import leaf.system.model.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +21,7 @@ public class SysLogApi extends Http {
      */
     @GetMapping("/system/api/log/getLog")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:log:get")
-    public JSONMap getLog() {
+    public ApiResponse getLog() {
         File logDir = new File(Log.logPath + "/log/");
 
         //判断文件夹是否存在
@@ -116,7 +117,7 @@ public class SysLogApi extends Http {
      */
     @PostMapping("/system/api/log/updateLog")
     @LoginToken(validBackend = true)
-    public JSONMap updateLog() {
+    public ApiResponse updateLog() {
         String updateType = param("UpdateType");
         String logUrl = param("log_url");
 
@@ -142,9 +143,7 @@ public class SysLogApi extends Http {
                 String logNewUrl = getFileDirByFilePath(logUrl) + newName + ".log";
 
                 if(file.renameTo(new File(Log.logPath + logNewUrl))) {
-                    JSONMap result = success();
-                    result.put("log_new_url",logNewUrl);
-                    return result;
+                    return success(logNewUrl);
                 }
                 break;
             case "Delete":

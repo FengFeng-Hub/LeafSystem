@@ -7,7 +7,8 @@ import leaf.common.mysql.Where;
 import leaf.common.util.Valid;
 import leaf.system.annotate.LoginToken;
 import leaf.system.common.Http;
-import leaf.system.common.SysUser;
+import leaf.system.model.ApiResponse;
+import leaf.system.model.SysUser;
 import leaf.system.interceptor.ApiGlobalInterceptor;
 import leaf.system.service.SysTimedTaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class SysTimedTaskApi extends Http {
      */
     @GetMapping("/system/api/timedTask/getSysTimedTaskList")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:timedTask:list")
-    public JSONMap getSysTimedTaskList() {
+    public ApiResponse getSysTimedTaskList() {
         String timedTaskId = param("timed_task_id");
         String taskDesc = param("task_desc");
         String taskGroup = param("task_group");
@@ -84,7 +85,7 @@ public class SysTimedTaskApi extends Http {
      */
     @PostMapping("/system/api/timedTask/updateSysTimedTask")
     @LoginToken(validBackend = true)
-    public JSONMap updateSysTimedTask() {
+    public ApiResponse updateSysTimedTask() {
         String updateType = param("UpdateType");
         String timedTaskId = param("timed_task_id");
         String taskDesc = param("task_desc");
@@ -413,7 +414,7 @@ public class SysTimedTaskApi extends Http {
      */
     @GetMapping("/api/sysTimedTaskLog/getSysTimedTaskLogList")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:timedTaskLog:list")
-    public JSONMap getSysTimedTaskLogList() {
+    public ApiResponse getSysTimedTaskLogList() {
         String timedTaskLogId = param("timed_task_log_id");
         String funcPath = param("func_path");
         String status = param("status");
@@ -459,7 +460,7 @@ public class SysTimedTaskApi extends Http {
      */
     @PostMapping("/api/sysTimedTaskLog/updateSysTimedTaskLog")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:timedTaskLog:delete")
-    public JSONMap updateSysTimedTaskLog() {
+    public ApiResponse updateSysTimedTaskLog() {
         String updateType = param("UpdateType");
         String timedTaskLogId = param("timed_task_log_id");
 

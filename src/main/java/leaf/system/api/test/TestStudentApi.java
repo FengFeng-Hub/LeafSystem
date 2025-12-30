@@ -1,20 +1,30 @@
 package leaf.system.api.test;
 
 import leaf.common.DB;
+import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
 import leaf.common.mysql.Where;
 import leaf.system.common.Http;
+import leaf.system.mapper.SysUserMapper;
+import leaf.system.model.ApiResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class TestStudentApi {
+public class TestStudentApi extends Http {
+    @Autowired
+    private SysUserMapper userMapper;
+    @GetMapping("/getUserById")
+    public JSONMap getUserById() {
+        return userMapper.getUserAndRoleByUserId(param("id"));
+    }
     /**
      * 获取测试学生表列表
      */
     @GetMapping("/api/testStudent/getTestStudentList")
-    public JSONMap getTestStudentList() {
+    public ApiResponse getTestStudentList() {
         String studentId = Http.param("student_id");
         String name = Http.param("name");
         String stuNo = Http.param("stuNo");
@@ -58,7 +68,7 @@ public class TestStudentApi {
      * 修改测试学生表
      */
     @PostMapping("/api/testStudent/updateTestStudent")
-    public JSONMap updateTestStudent() {
+    public ApiResponse updateTestStudent() {
         String updateType = Http.param("UpdateType");
         String studentId = Http.param("student_id");
         String name = Http.param("name");
@@ -77,24 +87,24 @@ public class TestStudentApi {
         switch(updateType) {
             case "Edit":
 //                if(!ApiGlobalInterceptor.permission("{$按照实际情况更换$}")) {
-//                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+//                    Http.write(403,error("接口执行失败，该用户没有权限"));
 //                    return null;
 //                }
 
                 if(studentId.isEmpty()) {
-                    return JSONMap.error("学生代码不能为空");
+                    return error("学生代码不能为空");
                 }
 
                 if(name.isEmpty()) {
-                    return JSONMap.error("姓名不能为空");
+                    return error("姓名不能为空");
                 }
 
                 if(userId.isEmpty()) {
-                    return JSONMap.error("用户代码不能为空");
+                    return error("用户代码不能为空");
                 }
 
                 if(stuNo.isEmpty()) {
-                    return JSONMap.error("学号不能为空");
+                    return error("学号不能为空");
                 }
 
                 String sql = "" +
@@ -103,49 +113,49 @@ public class TestStudentApi {
                         "where student_id = '"+DB.e(studentId)+"'";
 
                 if(DB.update(sql) > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
                 break;
             case "Add":
 //                if(!ApiGlobalInterceptor.permission("{$按照实际情况更换$}")) {
-//                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+//                    Http.write(403,error("接口执行失败，该用户没有权限"));
 //                    return null;
 //                }
 
                 if(name.isEmpty()) {
-                    return JSONMap.error("姓名不能为空");
+                    return error("姓名不能为空");
                 }
 
                 if(userId.isEmpty()) {
-                    return JSONMap.error("用户代码不能为空");
+                    return error("用户代码不能为空");
                 }
 
                 if(stuNo.isEmpty()) {
-                    return JSONMap.error("学号不能为空");
+                    return error("学号不能为空");
                 }
 
                 sql = "" +
                         "insert into test_student(name,user_id,stuNo,class,sex,is_graduate,birthday,create_time)" +
                         "value('"+DB.e(name)+"','"+DB.e(userId)+"','"+DB.e(stuNo)+"','"+DB.e(_class)+"','"+DB.e(sex)+"','"+DB.e(isGraduate)+"','"+DB.e(birthday)+"','"+DB.e(createTime)+"')";
 
-                if(DB.update(sql) > 0) return JSONMap.success();
+                if(DB.update(sql) > 0) return success();
                 break;
             case "Delete":
 //                if(!ApiGlobalInterceptor.permission("{$按照实际情况更换$}")) {
-//                    Http.write(403,JSONMap.error("接口执行失败，该用户没有权限"));
+//                    Http.write(403,error("接口执行失败，该用户没有权限"));
 //                    return null;
 //                }
 
                 if(studentId.isEmpty()) {
-                    return JSONMap.error("学生代码不能为空");
+                    return error("学生代码不能为空");
                 }
 
                 if(DB.update("delete from test_student where student_id = '"+DB.e(studentId)+"'") > 0) {
-                    return JSONMap.success();
+                    return success();
                 }
             default:
-                return JSONMap.error("修改类型有误");
+                return error("修改类型有误");
         }
-        return JSONMap.error("操作失败");
+        return error("操作失败");
     }
 }

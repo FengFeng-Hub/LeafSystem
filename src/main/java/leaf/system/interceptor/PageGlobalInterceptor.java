@@ -3,7 +3,7 @@ package leaf.system.interceptor;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import leaf.system.common.SysUser;
+import leaf.system.model.SysUser;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;

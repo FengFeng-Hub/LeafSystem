@@ -84,7 +84,7 @@ function init(props, params) {
                             _this.tableData = result.data;
                             _this.selectedRowKeys = [];
                             _this.selectedIds = [];
-                            _this.tablePagination.total = result.dataCount;
+                            _this.tablePagination.total = result.Count;
                             _this.tableLoading = false;
                         } else {
                             _this.$message.error(result.Msg);

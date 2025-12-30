@@ -115,7 +115,7 @@ function init(props, params) {
                                 _this.tableData = result.data; // 使用全新的数组
                             });
                             // _this.tableData = result.data;
-                            _this.tablePagination.total = result.dataCount;
+                            _this.tablePagination.total = result.Count;
                             _this.tableLoading = false;
                         } else {
                             _this.$message.error(result.Msg);

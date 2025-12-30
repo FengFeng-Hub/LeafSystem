@@ -1,4 +1,4 @@
-package leaf.system.common;
+package leaf.system.model;
 
 import jakarta.servlet.http.HttpServletResponse;
 import leaf.common.DB;
@@ -8,7 +8,7 @@ import leaf.common.object.JSONMap;
 import leaf.common.util.DateTime;
 import leaf.common.util.Lock;
 import leaf.common.util.Valid;
-import leaf.system.pojo.SysCurrentUser;
+import leaf.system.common.Http;
 
 /**
  * 系统用户

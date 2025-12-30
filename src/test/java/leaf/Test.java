@@ -1,6 +1,6 @@
 package leaf;
 
-import leaf.system.common.SysUser;
+import leaf.system.model.SysUser;
 
 import java.util.ArrayList;
 import java.util.List;

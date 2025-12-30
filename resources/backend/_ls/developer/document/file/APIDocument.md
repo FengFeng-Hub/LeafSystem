@@ -1277,7 +1277,7 @@ UpdateType=Rename
 
 ```json
 {
-    "log_new_url": "日志新路径",
+    "data": "日志新路径",
   	"IsSuccess": "1"//是否调用成功 0:否;1:是
 }
 ```

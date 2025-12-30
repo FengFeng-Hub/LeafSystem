@@ -5,6 +5,7 @@ import leaf.common.object.JSONList;
 import leaf.common.object.JSONMap;
 import leaf.system.annotate.LoginToken;
 import leaf.system.common.Http;
+import leaf.system.model.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,7 +35,7 @@ public class SysServerAPI extends Http {
      */
     @GetMapping("/system/api/server/getServerInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:server:serverInfo")
-    public JSONMap getServerInfo() {
+    public ApiResponse getServerInfo() {
         String isRepeatRequest = param("IsRepeatRequest");
         JSONMap result = new JSONMap();
         JSONMap serverInfo = new JSONMap();
@@ -133,7 +134,7 @@ public class SysServerAPI extends Http {
      */
     @GetMapping("/system/api/server/getCacheInfo")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:server:cacheInfo")
-    public JSONMap getCacheInfo() {
+    public ApiResponse getCacheInfo() {
         return success(Cache.entrySet());
     }
     /**
@@ -141,7 +142,7 @@ public class SysServerAPI extends Http {
      */
     @PostMapping("/system/api/server/deleteCache")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:server:deleteCache")
-    public JSONMap deleteCache() {
+    public ApiResponse deleteCache() {
 
         if("1".equals(param("IsDeleteAll"))) {
             Cache.clear();

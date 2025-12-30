@@ -2,6 +2,7 @@ package leaf.system.config;
 
 import leaf.common.Log;
 import leaf.common.object.JSONMap;
+import leaf.system.model.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -46,7 +47,7 @@ public class GlobalExceptionConfig {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
-        return JSONMap.error("请求失败，可能是请求方式有误").toString();
+        return ApiResponse.error("请求失败，可能是请求方式有误").toString();
     }
 
     /**
@@ -57,6 +58,6 @@ public class GlobalExceptionConfig {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleUnknownContentTypeException(HttpMediaTypeNotSupportedException ex) {
-        return JSONMap.error("请求失败，可能是Content-Type与参数不符合").toString();
+        return ApiResponse.error("请求失败，可能是Content-Type与参数不符合").toString();
     }
 }

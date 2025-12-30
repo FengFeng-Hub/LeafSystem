@@ -6,7 +6,8 @@ import leaf.common.mysql.Where;
 import leaf.common.util.Num;
 import leaf.common.util.Rdm;
 import leaf.system.common.Http;
-import leaf.system.common.SysUser;
+import leaf.system.model.ApiResponse;
+import leaf.system.model.SysUser;
 import leaf.common.DB;
 import leaf.common.Log;
 import leaf.common.object.JSONList;
@@ -37,7 +38,7 @@ public class SysUserApi extends Http {
      * 登录
      */
     @PostMapping("/system/api/user/login")
-    public JSONMap login() {
+    public ApiResponse login() {
         String account = param("account");
         String password = param("password");
         String isBackend = param("IsBackend","0");
@@ -134,7 +135,7 @@ public class SysUserApi extends Http {
      * 退出登录
      */
     @GetMapping("/system/api/user/logout")
-    public JSONMap logout() {
+    public ApiResponse logout() {
         if("1".equals(param("IsBackend", "0"))) {
             SysUser.removeBackendLoginId();
         } else {
@@ -147,7 +148,7 @@ public class SysUserApi extends Http {
      * 是否登录
      */
     @GetMapping("/system/api/user/isLogin")
-    public JSONMap isLogin() {
+    public ApiResponse isLogin() {
         String isBackend = param("IsBackend", "0");
         String userId;
 
@@ -191,115 +192,13 @@ public class SysUserApi extends Http {
         user.remove("role_name");
         return success(user);
     }
-    /**
-     * 获取用户列表(dataCont有问题)
-     */
-//    @GetMapping("/system/api/user/getUserList")
-//    @LoginToken(validBackend = true,permissionKey = "PermissionKey-system_user_getUserList")
-//    @Deprecated
-//    public JSONMap getUserListDeprecated() {
-//        String userId = param("user_id");
-//        String name = param("name");
-//        String account = param("account");
-//        String phone = param("phone");
-//        String email = param("email");
-//        String realName = param("real_name");
-//        String idcard = param("idcard");
-//        String sex = param("sex");
-//        String isDisable = param("is_disable");
-//        String loginIp = param("login_ip");
-//        String roleIdArr = param("role_id_arr");
-//        String roleIdStr = "";
-//        String[] roleIdSplit = {};
-//
-//        if(!Valid.isEmpty(roleIdArr)) {
-//            roleIdSplit = roleIdArr.split(",");
-//        }
-//
-//        for(int i = 0;i < roleIdSplit.length;i++) {
-//            if(i == roleIdSplit.length - 1) {
-//                roleIdStr += "'"+DB.e(roleIdSplit[i])+"'";
-//            } else {
-//                roleIdStr += "'"+DB.e(roleIdSplit[i])+"',";
-//            }
-//        }
-//
-//        String sql = "" +
-//                "select distinct a.user_id,name,account,password,personal_signature,avatar,birthday,phone,email,real_name,idcard," +
-//                "   sex,is_disable,login_ip,login_time " +
-//                "from sys_user a " +
-//                "   left join sys_user_role_rel b on a.user_id = b.user_id ";
-//        String relationship = SQLWhere.Like;
-//
-//        if("1".equals(param("IsEqual","0"))) {
-//            relationship = SQLWhere.Equal;
-//        }
-//
-//        String sqlWhere = new SQLWhere()
-//                .addAnd("a.user_id", userId, relationship)
-//                .addOr("a.name", name, relationship).addBracket("and")
-//                .addAnd("a.account", account, relationship)
-//                .addAnd("a.phone", phone, relationship)
-//                .addAnd("a.email", email, relationship)
-//                .addAnd("a.real_name", realName, relationship)
-//                .addAnd("a.idcard", idcard, relationship)
-//                .addAnd("ifnull(a.sex,3)", sex, "=")
-//                .addAnd("ifnull(a.is_disable,0)", isDisable, "=")
-//                .addAnd("a.login_ip", loginIp, relationship)
-//                .addAnd("b.role_id", roleIdStr,SQLWhere.In).get();
-//
-//        sql += sqlWhere;
-//        String orderBySQL = SysCommon.addOrderBySQL("sys_user","a");
-//
-//        if("".equals(orderBySQL)) {
-//            sql += " order by a.user_id desc ";
-//        } else {
-//            sql += orderBySQL;
-//        }
-//
-//        JSONMap result = DB.sqlToJSONMap(sql, param("PageNo"), param("PageCount"),"100");
-//        JSONList resultData = result.getList("data");
-//        String userIdStr = "";
-//
-//        for(int i = 0;i < resultData.size();i++) {
-//            if(i == resultData.size() - 1) {
-//                userIdStr += resultData.getMap(i).get("user_id");
-//            } else {
-//                userIdStr += resultData.getMap(i).get("user_id")+",";
-//            }
-//        }
-//
-//        if(!userIdStr.isEmpty()) {
-//            userIdStr = "where user_id in ("+userIdStr+")";
-//        }
-//
-//        JSONList roles = DB.query("" +
-//                "select a.user_id,a.role_id,role_name " +
-//                "    from sys_user_role_rel a " +
-//                "    inner join sys_role b on a.role_id = b.role_id " + userIdStr);
-//
-//        for (int i = 0;i < resultData.size();i++) {
-//            JSONList roleList = new JSONList();
-//
-//            for (int j = 0; j < roles.size(); j++) {
-//                if (resultData.getMap(i).getString("user_id").equals(roles.getMap(j).getString("user_id"))) {
-//                    JSONMap role = new JSONMap();
-//                    role.put("role_id", roles.getMap(j).getString("role_id"));
-//                    role.put("role_name", roles.getMap(j).getString("role_name"));
-//                    roleList.add(role);
-//                }
-//            }
-//            resultData.getMap(i).put("role_list", roleList);
-//        }
-//
-//        return result;
-//    }
+
     /**
      * 获取用户列表
      */
     @GetMapping("/system/api/user/getUserList")
     @LoginToken(validBackend = true,permissionKey = "lspk:ls:user:list")
-    public JSONMap getUserList() {
+    public ApiResponse getUserList() {
         String userId = param("user_id");
         String name = param("name");
         String account = param("account");
@@ -436,9 +335,7 @@ public class SysUserApi extends Http {
             return error("获取记录条数失败");
         }
 
-        JSONMap result = success(userData);
-        result.put("dataCount",count);
-        return result;
+        return success(userData).count(count);
     }
 
     /**
@@ -446,7 +343,7 @@ public class SysUserApi extends Http {
      */
     @PostMapping("/system/api/user/updateUser")
     @LoginToken(validBackend = true)
-    public JSONMap updateUser() {
+    public ApiResponse updateUser() {
         String updateType = param("UpdateType");
         String userId = param("user_id");
         String name = param("name");
@@ -645,7 +542,7 @@ public class SysUserApi extends Http {
      */
     @PostMapping("/system/api/user/batchUpdateUser")
     @LoginToken(validBackend = true)
-    public JSONMap batchUpdateUser() {
+    public ApiResponse batchUpdateUser() {
         String updateType = param("UpdateType");
         String sex = param("sex");
         String isDisable = param("is_disable");
@@ -720,7 +617,7 @@ public class SysUserApi extends Http {
      */
     @PostMapping("/system/api/user/updatePersonal")
     @LoginToken(validBackend = true, permissionKey = "lspk:ls:user:updatePersonal")
-    public JSONMap updatePersonal() {
+    public ApiResponse updatePersonal() {
         String updateType = param("UpdateType");
 
         switch(updateType) {

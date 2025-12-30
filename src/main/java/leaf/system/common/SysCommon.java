@@ -7,6 +7,7 @@ import leaf.common.mysql.SQLWhere;
 import leaf.common.object.*;
 import leaf.common.util.DateTime;
 import leaf.common.util.Lock;
+import leaf.system.model.ApiResponse;
 
 /**
  * 系统通用
@@ -127,11 +128,11 @@ public class SysCommon {
      * @param newSort 新排序
      * @return JSONMap响应信息
      */
-    public static JSONMap updateSort(String tableName,String primaryKeyFieldName,String id, String newSort) {
+    public static ApiResponse updateSort(String tableName, String primaryKeyFieldName, String id, String newSort) {
         String sort = DB.queryFirstField("select sort from "+tableName+" where "+primaryKeyFieldName+" = '"+DB.e(id)+"'");
 
         if(sort == null) {
-            return JSONMap.error("获取排序信息失败");
+            return ApiResponse.error("获取排序信息失败");
         }
 
         int _sort,_newSort;//当前排序和新排序
@@ -140,14 +141,14 @@ public class SysCommon {
             _sort = Integer.parseInt(sort);
             _newSort = Integer.parseInt(newSort);
         } catch(Exception e) {
-            return JSONMap.error("获取排序信息失败");
+            return ApiResponse.error("获取排序信息失败");
         }
 
         if(_sort < _newSort) {//向上移
             sort = DB.queryFirstField("select max(sort) from "+tableName);//最大排序
 
             if(sort == null) {
-                return JSONMap.error("获取排序信息失败");
+                return ApiResponse.error("获取排序信息失败");
             }
 
             int max;
@@ -155,31 +156,31 @@ public class SysCommon {
             try {
                 max = Integer.parseInt(sort);
             } catch(Exception e) {
-                return JSONMap.error("获取排序信息失败");
+                return ApiResponse.error("获取排序信息失败");
             }
 
             if(_sort >= max) {
-                return JSONMap.error("排序失败，这已经是第一条数据");
+                return ApiResponse.error("排序失败，这已经是第一条数据");
             }
 
             if(DB.updateTransaction("update "+tableName+" set sort = sort - 1 where sort > "+_sort+" and sort <= "+_newSort+";" +
                     "update "+tableName+" set sort = "+newSort+" where "+primaryKeyFieldName+" = '"+DB.e(id)+"'") != -1) {
-                return JSONMap.success("排序成功");
+                return ApiResponse.success("排序成功");
             }
         } else if(_sort > _newSort) {//向下移
             if(_sort <= 1) {
-                return JSONMap.error("排序失败，该行已经到底部了");
+                return ApiResponse.error("排序失败，该行已经到底部了");
             }
 
             if(DB.updateTransaction("update "+tableName+" set sort = sort + 1 where sort < "+_sort+" and sort >= "+_newSort+";" +
                     "update "+tableName+" set sort = "+_newSort+" where "+primaryKeyFieldName+" = '"+DB.e(id)+"'") != -1) {
-                return JSONMap.success("排序成功");
+                return ApiResponse.success("排序成功");
             }
         } else {
-            return JSONMap.success("排序成功");
+            return ApiResponse.success("排序成功");
         }
 
-        return JSONMap.error("排序失败");
+        return ApiResponse.error("排序失败");
     }
 //    /**
 //     * 添加排序SQL

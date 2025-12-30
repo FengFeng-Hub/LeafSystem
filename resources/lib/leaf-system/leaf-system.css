@@ -98,14 +98,10 @@ div::-webkit-scrollbar-thumb:hover {
     font-size: 16px;
 }
 .ls-main-content {
-    padding: 0 24px 0 24px;
+    padding: 10px 10px 0 10px;
     background: #f0f2f5;
 }
 /* 面包屑 */
-.ls-main-breadcrumb {
-    padding: 10px;
-    background: #f0f2f5;
-}
 .ls-main-breadcrumb-item {
     display: inline-block;
     color: rgba(0, 0, 0, 0.45);

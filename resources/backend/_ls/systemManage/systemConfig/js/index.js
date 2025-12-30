@@ -92,7 +92,7 @@ function init(props, params) {
                             _this.tableData = result.data;
                             _this.selectedRowKeys = [];
                             _this.selectedIds = [];
-                            _this.tablePagination.total = result.dataCount;
+                            _this.tablePagination.total = result.Count;
                             _this.tableLoading = false;
 
                             // 等 DOM 渲染完再初始化 Viewer

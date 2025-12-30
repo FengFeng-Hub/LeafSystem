@@ -8,6 +8,7 @@ import leaf.common.Log;
 import leaf.common.object.Cache;
 import leaf.common.object.JSONMap;
 import leaf.common.util.*;
+import leaf.system.model.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +32,7 @@ public class SystemApi extends Http {
      * 上传
      */
     @PostMapping("/system/api/upload")
-    public JSONMap upload() {
+    public ApiResponse upload() {
         Part file = part("File");
         String isOldName = param("IsOldName","0");
 
@@ -95,7 +96,7 @@ public class SystemApi extends Http {
      * 获取验证码
      */
     @GetMapping("/system/api/getValidCode")
-    public JSONMap getValidCode() {
+    public ApiResponse getValidCode() {
         String length = param("Length", "4");
         int _length;
 
@@ -127,7 +128,7 @@ public class SystemApi extends Http {
      * 检查验证码
      */
     @GetMapping("/system/api/checkValidCode")
-    public JSONMap validPuzzleCode() {
+    public ApiResponse validPuzzleCode() {
         String validParam = param("ValidParam");
         String text = param("Text");
         int result = SysCommon.checkValidCode(validParam,text);
@@ -147,7 +148,7 @@ public class SystemApi extends Http {
      * 获取拼图验证
      */
     @GetMapping("/system/api/getValidPuzzle")
-    public JSONMap getPuzzleValid() {
+    public ApiResponse getPuzzleValid() {
         String puzzleValidImgPath = System.getProperty("user.dir")+environment.getProperty("leaf.validPuzzle.path","/system/puzzleImg/");
         File file = new File(puzzleValidImgPath);
         String[] list = file.list();
@@ -184,7 +185,7 @@ public class SystemApi extends Http {
      * 检查验证拼图
      */
     @GetMapping("/system/api/checkValidPuzzle")
-    public JSONMap validPuzzleValid() {
+    public ApiResponse validPuzzleValid() {
         String validParam = param("ValidParam");
         String x = param("X");
         int _x = 0;

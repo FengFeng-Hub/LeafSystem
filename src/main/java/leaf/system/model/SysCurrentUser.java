@@ -1,4 +1,4 @@
-package leaf.system.pojo;
+package leaf.system.model;
 
 public class SysCurrentUser {
     /**

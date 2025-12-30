@@ -17,8 +17,6 @@
 	<a-button v-if="pageParams.backMenuParams" size="small"
 		@click="QiankunUtil.toPage('/backend/systemManage/menu/index.html', {backParams: pageParams.backMenuParams})"
 		style="margin-right: 10px;"><a-icon type="rollback"></a-icon> 返回</a-button>
-	<b>用户管理</b>
-	<a-divider></a-divider>
 	<div class="ls-table-tool">
 		<a-input-group compact style="width: 350px;">
 			<a-select v-model="searchConfig.searchType" style="width: 100px;">
