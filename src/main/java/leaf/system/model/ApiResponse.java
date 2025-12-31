@@ -2,7 +2,13 @@ package leaf.system.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ApiResponse {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class ApiResponse implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     /**
      * 数据
      */
