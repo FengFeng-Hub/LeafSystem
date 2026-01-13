@@ -52,6 +52,7 @@ public class SysLogApi extends Http {
             year = new JSONMap();
             year.put("type","dir");
             year.put("name",yearName + "年");
+            year.put("path", yearName);
             years.add(year);
 
             if(yearDirs[i].isDirectory()) {
@@ -68,6 +69,7 @@ public class SysLogApi extends Http {
                     month = new JSONMap();
                     month.put("type","dir");
                     month.put("name",monthName + "月");
+                    month.put("path", yearName + "/" + monthName);
                     months.add(month);
 
                     if(monthDirs[j].isDirectory()) {
@@ -84,6 +86,7 @@ public class SysLogApi extends Http {
                             day = new JSONMap();
                             day.put("type","dir");
                             day.put("name",dayName + "日");
+                            day.put("path", yearName + "/" + monthName + "/" + dayName);
                             days.add(day);
 
                             if(dayDirs[k].isDirectory()) {

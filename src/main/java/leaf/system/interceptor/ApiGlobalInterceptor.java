@@ -115,7 +115,7 @@ public class ApiGlobalInterceptor implements HandlerInterceptor {
 
         if(userRoleList == null) return false;
 
-        if(userRoleList.size() > 0 && userRoleList.getMap(0).getString("role_id").equals("1")) return true;//角色代码为1的跳过权限验证
+        if(!userRoleList.isEmpty() && userRoleList.getMap(0).getString("role_id").equals("1")) return true;//角色代码为1的跳过权限验证
 
         for(int i = 0;i < userRoleList.size();i++) {
             if(i == userRoleList.size() - 1) {

@@ -1,9 +1,13 @@
 package leaf.system.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ApiResponse implements Serializable {
     @Serial
@@ -32,8 +36,18 @@ public class ApiResponse implements Serializable {
     @JsonProperty("Code")
     private String code;
 
-    public ApiResponse() {
+    /**
+     * 动态属性
+     */
+    @JsonIgnore
+    private Map<String, Object> properties = new HashMap<>();
+    // 将所有动态属性作为顶级属性返回
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return properties;
     }
+
+    public ApiResponse() {}
 
     public ApiResponse(Object data, String success, String message, String count, String code) {
         this.data = data;
@@ -75,6 +89,18 @@ public class ApiResponse implements Serializable {
         this.count = count;
     }
 
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public Object get(String key) {
+        return properties.get(key);
+    }
+
     // ========== 链式调用 ==========
     public ApiResponse data(Object data) {
         this.data = data;
@@ -108,6 +134,11 @@ public class ApiResponse implements Serializable {
 
     public ApiResponse code(String code) {
         this.code = code;
+        return this;
+    }
+
+    public ApiResponse put(String key, Object value) {
+        this.properties.put(key, value);
         return this;
     }
 

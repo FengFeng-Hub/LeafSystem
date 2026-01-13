@@ -1,5 +1,7 @@
 package leaf.common;
 
+import org.springframework.data.repository.init.ResourceReader;
+
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
@@ -7,6 +9,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 
@@ -358,5 +361,38 @@ public class IO {
                 try { fos.close(); } catch (IOException e) { Log.write("Error",Log.getException(e)); }
             }
         }
+    }
+
+    /**
+     * 读取resources下的指定文件
+     *
+     * @param filePath 文件路径（相对）
+     * @return
+     */
+    public static String readResourcesFile(String filePath) {
+        StringBuilder content = new StringBuilder();
+
+        try (InputStream inputStream = ResourceReader.class
+                .getClassLoader()
+                .getResourceAsStream(filePath)) {
+
+            if (inputStream == null) {
+                Log.write("Error", Log.content("Error", "读取 resources 时未找到文件：" + filePath));
+                return "";
+            }
+
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    content.append(line).append(System.lineSeparator());
+                }
+            }
+        } catch (IOException e) {
+            Log.write("Error", Log.getException(e, "读取 resources 时发生异常：" + filePath));
+            return  "";
+        }
+        return content.toString().trim();
     }
 }

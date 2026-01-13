@@ -1223,12 +1223,15 @@ UpdateType=Delete
     "data": [{
         "type": "dir",//类型为文件夹
         "name": "年",
+        "path": "",
         "children": [{
             "type": "dir",//类型为文件夹
         	"name": "月",
+        	"path": "",
             "children": [{
                 "type": "dir",//类型为文件夹
                 "name": "日",
+        		"path": "",
                 "children": [{
                     "type": "file",//类型为文件
                     "name": "日志",
@@ -1513,6 +1516,7 @@ UpdateType=Delete
         "column_key": "字段键",
         "ControlType": "控件类型"
     }],
+    "package": "主类包路径",
   	"IsSuccess": "1"//是否调用成功 0:否;1:是
 }
 ```

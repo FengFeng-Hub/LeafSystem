@@ -216,12 +216,8 @@ public class SysUserApi extends Http {
             roleIdArr = Where.joinIn(roleIdArr.split(","));
         }
 
-        Where.Operator relationship = Where.Operator.LIKE;
-
-        if("1".equals(param("IsEqual","0"))) {
-            relationship = Where.Operator.EQ;
-        }
-
+        // 条件构造器
+        Where.Operator relationship = "1".equals(param("IsEqual", "0")) ? Where.Operator.EQ : Where.Operator.LIKE;
         String sqlWhere = new Where(true)
                 .and().add("aa.user_id", userId, Where.Operator.EQ)
                 .or().add("aa.name", name, relationship).group()

@@ -1,0 +1,157 @@
+package {$ packageName $}.api;
+
+import leaf.common.DB;
+import leaf.common.mysql.Where;
+import leaf.system.common.Http;
+import leaf.system.model.ApiResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class {$ className $}Api extends Http {
+    /**
+     * 获取{$ tableDesc $}列表
+     */
+    @GetMapping("{$ apiRootAddress $}get{$ className $}List")
+    public ApiResponse get{$ className $}List() {
+        // 请求参数
+{# 搜索条件变量 #}
+        String {$ javaKeyWord(primaryKeyField) $} = param("{$ primaryKeyColumn $}");
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isSearch %}
+        String {$ javaKeyWord(item.columnSmallHump) $} = param("{$ item.columnUnderLine $}");
+{% endif %}
+{% endfor %}
+
+        String sortField = param("SortField");
+        String sortOrder = param("SortOrder");
+
+        String sql = "" +
+                "select {% for item in columnInfoList %}
+{% if item.isPrimaryKey or item.isSelect %}{$ mysqlKeyWord(item.columnUnderLine) $}{$ loop.last ? '' : ', ' $}{% endif %}
+{% endfor %} " +
+                "from {$ mysqlKeyWord(tableName) $} ";
+
+        // 条件构造器
+        // TODO 需要添加mysql关键字检测
+        Where.Operator relationship = "1".equals(param("IsEqual", "0")) ? Where.Operator.EQ : Where.Operator.LIKE;
+        sql += new Where(true)
+                .or().add("{$ mysqlKeyWord(primaryKeyColumn) $}", {$ javaKeyWord(primaryKeyField) $}, relationship)
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isSearch %}
+                .or().add("{$ mysqlKeyWord(item.columnUnderLine) $}", {$ javaKeyWord(item.columnSmallHump) $}, relationship)
+{% endif %}
+{% endfor %}
+                .prependWhere().toString();
+
+{# 排序 #}
+{% if hasSort %}
+        // 排序字段
+        if(!sortField.isEmpty()) {
+            switch(sortField) {
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isSort %}
+                case "{$ item.columnUnderLine $}":
+{% endif %}
+{% endfor %}
+                    if(sortOrder.equals("asc")) sql += " order by `" + sortField + "` asc ";
+                    else if(sortOrder.equals("desc")) sql += " order by `" + sortField + "` desc ";
+                    break;
+                default:
+                    sql += " order by `{$ primaryKeyColumn $}` desc ";
+            }
+        } else {
+            sql += " order by `{$ primaryKeyColumn $}` desc ";
+        }
+{% else %}
+        // 默认排序
+        sql += " order by `{$ primaryKeyColumn $}` desc";
+{% endif %}
+
+        return DB.sqlToJSONMap(sql, param("PageNo"), param("PageCount"),"100");
+    }
+
+    /**
+     * 修改{$ tableDesc $}
+     */
+    @PostMapping("{$ apiRootAddress $}update{$ className $}")
+    public ApiResponse update{$ className $}() {
+        String updateType = param("UpdateType");
+        // 请求参数
+        String {$ javaKeyWord(primaryKeyField) $} = param("{$ primaryKeyColumn $}");
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isEdit %}
+        String {$ javaKeyWord(item.columnSmallHump) $} = param("{$ item.columnUnderLine $}");
+{% endif %}
+{% endfor %}
+
+        // Switch特殊处理
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.ControlType == '6' %}
+        if (!"1".equals({$ javaKeyWord(item.columnSmallHump) $})) {
+            {$ javaKeyWord(item.columnSmallHump) $} = "0";
+        }
+{% endif %}
+{% endfor %}
+
+        switch(updateType) {
+            case "Edit":
+                // 主键不能为空
+                if({$ javaKeyWord(primaryKeyField) $}.isEmpty()) {
+                    return error("数据标识不能为空");
+                }
+
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isNotNull %}
+                if({$ javaKeyWord(item.columnSmallHump) $}.isEmpty()) {
+                    return error("{$ item.columnTitle $}不能为空");
+                }
+{% endif %}
+{% endfor %}
+
+                String sql = "" +
+                        "update {$ mysqlKeyWord(tableName) $} " +
+                        "set " +
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isEdit %}
+                        " {$ mysqlKeyWord(item.columnUnderLine) $} = '" + DB.e({$ javaKeyWord(item.columnSmallHump) $}) + "'{$ loop.last ? ' ' : ', ' $}" +
+{% endif %}
+{% endfor %}
+                        "where `{$ primaryKeyColumn $}` = '"+DB.e({$ javaKeyWord(primaryKeyField) $})+"'";
+
+                if(DB.update(sql) > 0) {
+                    return success();
+                }
+                break;
+            case "Add":
+{% for item in columnInfoList %}
+{% if not item.isPrimaryKey and item.isNotNull %}
+                if({$ javaKeyWord(item.columnSmallHump) $}.isEmpty()) {
+                    return error("{$ item.columnTitle $}不能为空");
+                }
+{% endif %}
+{% endfor %}
+
+                sql = "" +
+                        "insert into {$ tableName $}({% for item in columnInfoList %}{% if not item.isPrimaryKey and item.isEdit %}{$ mysqlKeyWord(item.columnUnderLine) $}{$ loop.last ? '' : ', ' $}{% endif %}{% endfor %})" +
+                        "value({$ tableName $}({% for item in columnInfoList %}{% if not item.isPrimaryKey and item.isEdit %}{$ javaKeyWord(item.columnSmallHump) $}{$ loop.last ? '' : ', ' $}{% endif %}{% endfor %})";
+
+                if(DB.update(sql) > 0) return success();
+                break;
+            case "Delete":
+                // 主键不能为空
+                if({$ javaKeyWord(primaryKeyField) $}.isEmpty()) {
+                    return error("数据标识不能为空");
+                }
+
+                if(DB.update("delete from {$ tableName $} where {$ primaryKeyColumn $} = '"+DB.e({$ javaKeyWord(primaryKeyField) $})+"'") > 0) {
+                    return success();
+                }
+                break;
+            default:
+                return error("修改类型有误");
+        }
+        return error("操作失败");
+    }
+}

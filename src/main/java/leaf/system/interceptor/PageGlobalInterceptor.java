@@ -3,6 +3,7 @@ package leaf.system.interceptor;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import leaf.system.model.SysCurrentUser;
 import leaf.system.model.SysUser;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -16,6 +17,10 @@ public class PageGlobalInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws ServletException, IOException {
 //        response.setCharacterEncoding("GBK");
         String uri = request.getRequestURI();
+        // 设置登录用户
+        SysUser.setCurrent(new SysCurrentUser(
+                SysUser.getUserByToken(false), SysUser.getUserByToken(true)
+        ));
 
         if(uri.startsWith("/backend")) {
             if(SysUser.getUserByToken(true) == null) {
