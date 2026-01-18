@@ -59,6 +59,10 @@
             <div class="ls-control-tag">接口根地址</div>
             <a-input v-model="formData.api_root_address" style="width: calc(100% - 94px);"/>
         </a-input-group>
+        <a-input-group compact style="width: 300px;">
+            <div class="ls-control-tag">package</div>
+            <a-input v-model="formData.package" style="width: calc(100% - 94px);"/>
+        </a-input-group>
     </div>
     <div class="ls-table-tool">
         <div>
@@ -73,7 +77,7 @@
         :data-source="tableData"
         :pagination="false"
         :loading="tableLoading"
-        :scroll="{ x: 1700 }"
+        :scroll="{ x: 1820 }"
         size="small" bordered
     >
         <template slot="search" slot-scope="text, record, index">
@@ -101,7 +105,8 @@
                 @change="() => formData.primary_key_column_name = record.column_name"/>
         </template>
         <template slot="select" slot-scope="text, record, index">
-            <a-switch size="small" :checked="formData.column_info_list[index].select === '1'"
+            <a-switch v-if="record.column_key === 'PRI'" size="small" checked disabled></a-switch>
+            <a-switch v-else size="small" :checked="formData.column_info_list[index].select === '1'"
                 @change="(checked) => formData.column_info_list[index].select = checked?'1':'0'"/>
         </template>
         <template slot="_title" slot-scope="text, record, index">
@@ -127,6 +132,10 @@
                 <a-select-option value="5">选择器</a-select-option>
                 <a-select-option value="6">开关</a-select-option>
             </a-select>
+        </template>
+        <template slot="width" slot-scope="text, record, index">
+            <template v-if="record.column_key === 'PRI'"> 100 </template>
+            <a-input-number v-else v-model="formData.column_info_list[index].width" size="small" :min="1" :max="500" :precision="0"/>
         </template>
     </a-table>
     <!-- 使用说明模态框 -->
@@ -178,6 +187,8 @@
                         title: '默认值', dataIndex: 'column_default', align: 'center', width: 150
                     }, {
                         title: '字段键', dataIndex: 'column_key', align: 'center', width: 100
+                    }, {
+                        title: '字段键', dataIndex: 'column_key', align: 'center', width: 100
                     }]
                 }, {
                     title: '前后端',
@@ -204,7 +215,9 @@
                     }, {
                         title: '显示', align: 'center', width: 50, scopedSlots: { customRender: 'visible' }
                     }, {
-                        title: '对齐', align: 'center', width: 100, scopedSlots: { customRender: 'align' }
+                        title: '宽度', align: 'center', width: 100, scopedSlots: { customRender: 'width' }
+                    }, {
+                        title: '对齐', align: 'center', width: 120, scopedSlots: { customRender: 'align' }
                     }, {
                         title: '控件类型', align: 'center', width: 180, scopedSlots: { customRender: 'ControlType' }
                     }]
@@ -255,7 +268,8 @@
                                     module_name: tableNameHump,
                                     api_root_address: '/api/' + tableNameHump + '/',
                                     primary_key_column_name: '',
-                                    column_info_list: []
+                                    column_info_list: [],
+                                    package: result.package
                                 };
 
                                 result.data.forEach((item) => {
@@ -287,7 +301,8 @@
                                         title: item.column_comment,
                                         visible: '1',
                                         align: 'center',
-                                        ControlType: controlType
+                                        ControlType: controlType,
+                                        width: 100
                                     });
                                 });
 

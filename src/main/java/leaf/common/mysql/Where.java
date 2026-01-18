@@ -88,7 +88,6 @@ public class Where {
      * @return 当前 Where 对象（用于链式调用）
      */
     public Where add(String column, String value, Operator operator) {
-        System.out.println(this.sql);
         if (!StringUtils.isEmpty(value) || !isRemoveEmptyValue) {
             switch (operator) {
                 case EQ:
@@ -381,7 +380,6 @@ public class Where {
      * @return 当前 Where 对象（用于链式调用）
      */
     public Where prependWhere() {
-        System.out.println(this.sql);
         if(!this.sql.toString().isBlank()) {
             this.sql = new StringBuffer(" where").append(StrUtil.removePrefix(sql.toString(),"and","or"));
         }

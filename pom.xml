@@ -18,7 +18,7 @@
 
     <!-- 项目的依赖结构 -->
     <dependencies>
-        <!-- springboot -->
+        <!-- **********  Spring Framework  ********** -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -36,6 +36,14 @@
 <!--            <artifactId>spring-boot-starter-webflux</artifactId>-->
 <!--        </dependency>-->
 <!--        <dependency>-->
+
+        <!-- **********  数据库及组件  ********** -->
+        <!-- MySQL/MyBatis/MyBatis Plus -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.29</version>
+        </dependency>
 <!--            <groupId>org.mybatis.spring.boot</groupId>-->
 <!--            <artifactId>mybatis-spring-boot-starter</artifactId>-->
 <!--            <version>3.0.3</version>-->
@@ -45,24 +53,28 @@
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>3.5.15</version>
         </dependency>
+        <!-- Redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- pebble 代码生成使用模板 -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.29</version>
+            <groupId>io.pebbletemplates</groupId>
+            <artifactId>pebble</artifactId>
+            <version>4.1.0</version>
+<!--            <scope>compile</scope>-->
         </dependency>
 
-        <!-- common -->
+        <!-- **********  common 所需依赖  ********** -->
+        <!-- 邮箱 -->
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
             <version>1.4.3</version>
         </dependency>
-
+        <!-- 图片处理 -->
         <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
@@ -73,43 +85,19 @@
             <artifactId>javase</artifactId>
             <version>3.1.0</version>
         </dependency>
-
         <dependency>
             <groupId>net.ifok.image</groupId>
             <artifactId>image4j</artifactId>
             <version>0.7.2</version>
         </dependency>
-
+        <!-- 任务调度器（定时任务） -->
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
             <version>2.5.0</version>
         </dependency>
 
-<!--        &lt;!&ndash; AI &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>dev.langchain4j</groupId>-->
-<!--            <artifactId>langchain4j</artifactId>-->
-<!--            <version>1.1.0</version>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>dev.langchain4j</groupId>-->
-<!--            <artifactId>langchain4j-reactor</artifactId>-->
-<!--            <version>1.1.0-beta7</version>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>dev.langchain4j</groupId>-->
-<!--            <artifactId>langchain4j-ollama</artifactId>-->
-<!--            <version>1.1.0-rc1</version>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>dev.langchain4j</groupId>-->
-<!--            <artifactId>langchain4j-open-ai</artifactId>-->
-<!--            <version>1.1.0</version>-->
-<!--        </dependency>-->
+        <!-- **********  系统其他依赖  ********** -->
     </dependencies>
 
     <build>

@@ -50,13 +50,6 @@ public class SysUserApi extends Http {
 
         password = SysUser.md5Pwd(password);
 
-//        String sql = "" +
-//                "select a.user_id,a.is_disable,c.is_disable 'role_is_disable',d.is_allow_login_backend " +
-//                "from sys_user a " +
-//                "   left join sys_user_role_rel b on a.user_id = b.user_id " +
-//                "   left join sys_role c on b.role_id = c.role_id and c.is_disable = '1' " +
-//                "   left join sys_role d on b.role_id = d.role_id and d.is_allow_login_backend = '1' " +
-//                "where a.account = '"+DB.e(account)+"' and a.password = '"+DB.e(password)+"'";
         String sql = "" +
                 "select a.user_id, a.is_disable, " +
 //                角色是否禁用 (如果所有角色禁用，返回1，否则返回0)
@@ -223,12 +216,8 @@ public class SysUserApi extends Http {
             roleIdArr = Where.joinIn(roleIdArr.split(","));
         }
 
-        Where.Operator relationship = Where.Operator.LIKE;
-
-        if("1".equals(param("IsEqual","0"))) {
-            relationship = Where.Operator.EQ;
-        }
-
+        // 条件构造器
+        Where.Operator relationship = "1".equals(param("IsEqual", "0")) ? Where.Operator.EQ : Where.Operator.LIKE;
         String sqlWhere = new Where(true)
                 .and().add("aa.user_id", userId, Where.Operator.EQ)
                 .or().add("aa.name", name, relationship).group()

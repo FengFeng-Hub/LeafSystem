@@ -25,16 +25,16 @@ public class SystemConfig {
     @Autowired
     private DataSource dataSource;
 
+    // ✅ 安全地推断主类
+    public final static Class<?> MainClass = mainApplicationClass();
+
     /**
      * 程序启动后最先执行的方法
      */
     @PostConstruct
     public void init() {
-        // ✅ 安全地推断主类
-        Class<?> mainClass = mainApplicationClass();
-
-        if (mainClass != null) {
-            System.out.println(Log.info("主类检测：" + mainClass.getName()));
+        if (MainClass != null) {
+            System.out.println(Log.info("主类检测：" + MainClass.getName()));
         } else {
             System.out.println(Log.error("未检测到主类，可能在特殊运行环境下"));
         }
@@ -57,7 +57,7 @@ public class SystemConfig {
         System.out.println(Log.info("JDBC配置"));
 
         // 检查启动类是否有EnableMail注解
-        if (mainClass.isAnnotationPresent(EnableMail.class)) {
+        if (MainClass.isAnnotationPresent(EnableMail.class)) {
             Mail.config(
                     environment.getProperty("spring.mail.host"),
                     environment.getProperty("spring.mail.port"),
@@ -68,7 +68,7 @@ public class SystemConfig {
         }
     }
 
-    public static Class<?> mainApplicationClass() {
+    private static Class<?> mainApplicationClass() {
         try {
             StackTraceElement[] stackTrace = new RuntimeException().getStackTrace();
             for (StackTraceElement element : stackTrace) {
